@@ -169,11 +169,10 @@
     </main>
 
     <script>
-        const API_BASE = "http://127.0.0.1:8000";
         const EXAMPLES = {
-            1: `${API_BASE}/examples/example1.txt`,
-            2: `${API_BASE}/examples/example2.txt`,
-            3: `${API_BASE}/examples/example3.txt`,
+            1: "/examples/example1.txt",
+            2: "/examples/example2.txt",
+            3: "/examples/example3.txt",
         };
 
         const input = document.getElementById("email-input");
@@ -267,7 +266,7 @@
             } catch (error) {
                 setStatus(
                     `Could not load example ${number} (${error.message}). ` +
-                        "The API server must be running on 127.0.0.1:8000.",
+                        "Make sure the PhishLens server is running.",
                     true
                 );
             }
@@ -283,7 +282,7 @@
             setBusy(true);
             setStatus("Analyzing...");
             try {
-                const response = await fetch(`${API_BASE}/analyze`, {
+                const response = await fetch("/analyze", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ raw_email: rawEmail }),
@@ -306,7 +305,7 @@
             } catch (error) {
                 setStatus(
                     `Analysis failed (${error.message}). ` +
-                        "Check that the API is running on 127.0.0.1:8000.",
+                        "Make sure the PhishLens server is running.",
                     true
                 );
             } finally {
