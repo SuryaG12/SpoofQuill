@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="PhishLens reads a raw email and shows the warning signs behind a 0–100 phishing score.">
-    <title>PhishLens — Email threat analysis</title>
+    <meta name="description" content="SpoofScope reads a raw email and shows the warning signs behind a phishing score from 0 to 100.">
+    <title>SpoofScope: email threat analysis</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -151,13 +151,15 @@
         }
         .title-mask {
             overflow: hidden;
-            padding-bottom: 0.06em;
-            margin-bottom: -0.06em;
+            /* Carries the title's type scale so the padding clears the descenders. */
+            font-size: clamp(3rem, 17vw, 16rem);
+            padding-bottom: 0.26em;
+            margin-bottom: -0.26em;
         }
         h1 {
             margin: 0;
             font-family: var(--display);
-            font-size: clamp(3.25rem, 20vw, 15rem);
+            font-size: 1em;
             font-weight: 400;
             line-height: 0.82;
             letter-spacing: -0.065em;
@@ -335,8 +337,8 @@
         .examples {
             display: flex;
             flex-wrap: wrap;
-            align-items: baseline;
-            gap: 0.8rem 1.5rem;
+            align-items: center;
+            gap: 0.6rem 0.55rem;
             margin-top: 1.4rem;
         }
         .examples-label {
@@ -348,25 +350,31 @@
             color: var(--faint);
         }
         .example {
-            padding: 0 0 0.2rem;
-            border: 0;
-            border-bottom: 1px solid transparent;
+            padding: 0.42rem 0.72rem 0.36rem;
+            border: 1px solid var(--ink);
             background: none;
             font-family: var(--mono);
             font-size: 0.68rem;
             letter-spacing: 0.05em;
             text-transform: uppercase;
-            color: var(--muted);
+            color: var(--ink);
             cursor: pointer;
-            transition: color 0.35s var(--ease-ui), border-color 0.35s var(--ease-ui);
+            transition:
+                color 0.35s var(--ease-ui),
+                background-color 0.35s var(--ease-ui),
+                border-color 0.35s var(--ease-ui);
         }
         .example span {
             margin-right: 0.5em;
-            color: var(--faint);
+            color: var(--muted);
         }
         .example:hover {
-            color: var(--ink);
-            border-bottom-color: var(--ink);
+            background: var(--ink);
+            color: var(--bg);
+            border-color: var(--ink);
+        }
+        .example:hover span {
+            color: var(--bg);
         }
 
         .analyze {
@@ -761,7 +769,7 @@
             to { opacity: 1; transform: translateY(0); }
         }
         @keyframes title-rise {
-            from { transform: translateY(108%); }
+            from { transform: translateY(135%); }
             to { transform: translateY(0); }
         }
         @keyframes score-in {
@@ -905,7 +913,7 @@
 
     <header class="topbar">
         <div class="shell topbar-inner">
-            <a class="brand" href="/">PhishLens</a>
+            <a class="brand" href="/">SpoofScope</a>
             <nav class="topnav" aria-label="Sections">
                 <a href="#analyzer">Analyzer</a>
                 <a href="#method">Method</a>
@@ -915,15 +923,15 @@
 
     <main>
         <section class="hero shell" aria-labelledby="page-title">
-            <p class="eyebrow">Email threat analysis — raw headers, read plainly</p>
+            <p class="eyebrow">Email threat analysis</p>
             <div class="title-mask">
-                <h1 id="page-title">PhishLens</h1>
+                <h1 id="page-title">SpoofScope</h1>
             </div>
 
             <div class="hero-foot">
                 <p class="lede">
-                    A quiet instrument for suspicious email. Paste the message and PhishLens reads the headers,
-                    the links, and the pressure — then shows you exactly what raised its concern.
+                    Paste a suspicious email and SpoofScope reads the headers and the links. It returns a score
+                    from 0 to 100 and lists the signs that pushed the score up.
                 </p>
                 <div class="hero-meta">
                     <span class="meta-label">Signals</span>
@@ -931,7 +939,7 @@
                         Reply-to mismatch<br>
                         Misleading link target<br>
                         Urgency language<br>
-                        Payment or login pressure
+                        Pressure to pay or sign in
                     </p>
                 </div>
             </div>
@@ -945,14 +953,14 @@
             <div class="section-head">
                 <span class="section-index">01</span>
                 <h2 id="analyzer-title">Analyzer</h2>
-                <span class="section-meta">Raw email · one message at a time</span>
+                <span class="section-meta">Raw email, one at a time</span>
             </div>
 
             <div class="field-grid">
                 <aside class="field-aside">
                     <p class="field-title">Paste the<br>email.</p>
                     <p class="field-note">
-                        Headers, body, links — the whole message. Every score comes from the text you provide.
+                        Include the headers, the body, and the links. The score comes from the text you paste.
                     </p>
                 </aside>
 
@@ -961,7 +969,7 @@
                         <label for="email-input">Raw message</label>
                         <span id="char-count">0 characters</span>
                     </div>
-                    <textarea id="email-input" rows="10" spellcheck="false" placeholder="Paste the raw email here — headers, body, links."></textarea>
+                    <textarea id="email-input" rows="10" spellcheck="false" placeholder="Paste the raw email here. Include headers, body, and links."></textarea>
 
                     <div class="examples" role="group" aria-label="Load an example email">
                         <span class="examples-label">Examples</span>
@@ -992,7 +1000,7 @@
 
             <div class="score-area">
                 <div class="score-main">
-                    <span id="score" aria-label="Phishing risk score">—</span>
+                    <span id="score" aria-label="Phishing risk score">·</span>
                     <span class="score-of">/100</span>
                 </div>
                 <div class="score-side">
@@ -1015,7 +1023,7 @@
                         <span id="reason-count">0</span>
                     </div>
                     <ol id="reasons">
-                        <li class="empty">No analysis yet. Load an example to begin.</li>
+                        <li class="empty">No analysis yet. Load an example to start.</li>
                     </ol>
                 </section>
 
@@ -1026,15 +1034,15 @@
                     <dl>
                         <div class="sender-row">
                             <dt>From</dt>
-                            <dd id="sender" class="is-muted">—</dd>
+                            <dd id="sender" class="is-muted">None</dd>
                         </div>
                         <div class="sender-row">
                             <dt>Domain</dt>
-                            <dd id="sender-domain" class="is-muted">—</dd>
+                            <dd id="sender-domain" class="is-muted">None</dd>
                         </div>
                         <div class="sender-row">
                             <dt>Reply-to</dt>
-                            <dd id="reply-to" class="is-muted">—</dd>
+                            <dd id="reply-to" class="is-muted">None</dd>
                         </div>
                     </dl>
                 </section>
@@ -1046,7 +1054,7 @@
                     <span id="link-count">0</span>
                 </div>
                 <ul id="links">
-                    <li class="empty">No links found yet.</li>
+                    <li class="empty">No links yet.</li>
                 </ul>
             </section>
         </section>
@@ -1059,26 +1067,27 @@
             </div>
 
             <p class="method-intro">
-                Four independent signals add points: reply-to mismatch, misleading link text, urgency language,
-                and a link that asks for payment or a login. A stacking bonus applies when several fire together,
-                because unrelated warning signs are stronger evidence than any one alone.
+                Four signals add points: a reply-to that does not match the sender, link text that hides where it
+                goes, urgent language, and a link that asks for payment or a login. When several of these appear in
+                one message, a stacking bonus adds more points. Unrelated signs together are stronger evidence than
+                any one alone.
             </p>
 
             <div class="bands">
                 <div class="band" data-state="low">
                     <span class="band-name">Low</span>
-                    <span class="band-range">00–29</span>
-                    <p>Little or no evidence of phishing. Still verify unusual requests through a channel you already trust.</p>
+                    <span class="band-range">00 to 29</span>
+                    <p>The message shows little or no evidence of phishing. Check unusual requests through a channel you already trust.</p>
                 </div>
                 <div class="band" data-state="medium">
                     <span class="band-name">Suspicious</span>
-                    <span class="band-range">30–59</span>
-                    <p>One or more real warning signs. Confirm the sender before you reply, pay, or sign in.</p>
+                    <span class="band-range">30 to 59</span>
+                    <p>The message has one or more real warning signs. Confirm the sender before you reply, pay, or sign in.</p>
                 </div>
                 <div class="band" data-state="high">
                     <span class="band-name">High</span>
-                    <span class="band-range">60–100</span>
-                    <p>Several independent signals stack up. Treat the message as hostile and do not use its links.</p>
+                    <span class="band-range">60 to 100</span>
+                    <p>Several signals point the same way. Treat the message as hostile and do not use its links.</p>
                 </div>
             </div>
         </section>
@@ -1086,8 +1095,8 @@
 
     <footer class="footer">
         <div class="shell footer-inner">
-            <p>PhishLens — email threat analysis</p>
-            <p>Scores are a reading aid, not a verdict</p>
+            <p>SpoofScope, email threat analysis</p>
+            <p>Scores help you decide what to check next</p>
         </div>
     </footer>
 
@@ -1115,15 +1124,15 @@
         const RISK = {
             low: {
                 label: "Low risk",
-                caption: "Little or no evidence of phishing was found.",
+                caption: "The message shows little or no evidence of phishing.",
             },
             medium: {
                 label: "Suspicious",
-                caption: "Some warning signs are present. Verify the sender before acting.",
+                caption: "Warning signs are present. Check the sender before you reply, pay, or sign in.",
             },
             high: {
                 label: "High risk",
-                caption: "Several independent warning signs stack up. Do not use the links.",
+                caption: "Several warning signs fire together. Do not use the links in this message.",
             },
         };
 
@@ -1139,7 +1148,7 @@
         }
 
         function show(value) {
-            if (value === null || value === undefined || value === "") return "—";
+            if (value === null || value === undefined || value === "") return "None";
             return String(value);
         }
 
@@ -1159,7 +1168,7 @@
         function setOrigin(id, value) {
             const node = document.getElementById(id);
             node.textContent = show(value);
-            node.classList.toggle("is-muted", node.textContent === "—");
+            node.classList.toggle("is-muted", node.textContent === "None");
         }
 
         function restartResultAnimation() {
@@ -1171,7 +1180,7 @@
         function resetReadout() {
             readout.classList.remove("has-result");
             setState("idle", "Awaiting sample", "Paste a message to read its score.");
-            score.textContent = "—";
+            score.textContent = "·";
             score.setAttribute("aria-label", "Phishing risk score");
             scoreFill.style.transform = "scaleX(0)";
             reasonCount.textContent = "0";
@@ -1181,7 +1190,7 @@
             reasons.replaceChildren();
             const reasonItem = document.createElement("li");
             reasonItem.className = "empty";
-            reasonItem.textContent = "No analysis yet. Load an example to begin.";
+            reasonItem.textContent = "No analysis yet. Load an example to start.";
             reasons.append(reasonItem);
 
             setOrigin("sender", null);
@@ -1192,7 +1201,7 @@
             links.replaceChildren();
             const linkItem = document.createElement("li");
             linkItem.className = "empty";
-            linkItem.textContent = "No links found yet.";
+            linkItem.textContent = "No links yet.";
             links.append(linkItem);
         }
 
@@ -1239,7 +1248,7 @@
             if (!data.links.length) {
                 const item = document.createElement("li");
                 item.className = "empty";
-                item.textContent = "No links found.";
+                item.textContent = "No links yet.";
                 links.append(item);
             }
             data.links.forEach((link, index) => {
@@ -1265,7 +1274,7 @@
             });
 
             restartResultAnimation();
-            setStatus(`Analysis complete — score ${data.score}/100.`);
+            setStatus(`Analysis complete. Score ${data.score}/100.`);
         }
 
         async function loadExample(number) {
@@ -1281,7 +1290,7 @@
             } catch (error) {
                 setStatus(
                     `Could not load example ${number} (${error.message}). ` +
-                        "Make sure the PhishLens server is running.",
+                        "Check that the SpoofScope server is running.",
                     true
                 );
             }
@@ -1319,7 +1328,7 @@
             } catch (error) {
                 setStatus(
                     `Analysis failed (${error.message}). ` +
-                        "Make sure the PhishLens server is running.",
+                        "Check that the SpoofScope server is running.",
                     true
                 );
             } finally {
