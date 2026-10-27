@@ -2,708 +2,1093 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PhishLens</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="PhishLens reads a raw email and shows the warning signs behind a 0–100 phishing score.">
+    <title>PhishLens — Email threat analysis</title>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+
     <style>
         :root {
             color-scheme: dark;
-            --bg: #0A0F1A;
-            --surface: #121A2B;
-            --surface-head: #0F1726;
-            --line: #1D2A3F;
-            --line-strong: #2A3A54;
-            --text: #E6EDF3;
-            --muted: #8B98AD;
-            --accent: #38BDF8;
-            --accent-strong: #7DD3FC;
-            --low: #34D399;
-            --medium: #FBBF24;
-            --high: #F87171;
+            --bg: #080808;
+            --ink: #F2F0EB;
+            --muted: #8A8882;
+            --faint: #5E5C57;
+            --line: #232323;
+            --low: #B7E4A8;
+            --mid: #F0C674;
+            --high: #FF7A6B;
             --state: var(--muted);
 
-            --font-ui: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
-            --font-mono: "JetBrains Mono", "Cascadia Mono", Consolas, ui-monospace, monospace;
+            --display: "Inter Tight", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            --mono: "IBM Plex Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+
+            --gutter: clamp(2rem, 6vw, 6rem);
+            --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+            --ease-ui: cubic-bezier(0.4, 0, 0.2, 1);
         }
+
         * { box-sizing: border-box; }
-        html { background: var(--bg); }
+        html {
+            background: var(--bg);
+            scroll-behavior: smooth;
+        }
         body {
             margin: 0;
             min-height: 100vh;
-            padding: 24px 32px 36px;
-            background-color: var(--bg);
-            background-image:
-                linear-gradient(rgba(139, 152, 173, 0.045) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(139, 152, 173, 0.045) 1px, transparent 1px);
-            background-size: 48px 48px;
-            color: var(--text);
-            font-family: var(--font-ui);
-            font-size: 15px;
+            background: var(--bg);
+            color: var(--ink);
+            font-family: var(--display);
+            font-size: 16px;
+            font-weight: 400;
             line-height: 1.5;
             -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            overflow-x: hidden;
         }
-
-        .topbar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 20px;
-            max-width: 1180px;
-            margin: 0 auto 22px;
-            padding-bottom: 18px;
-            border-bottom: 1px solid var(--line);
+        ::selection {
+            background: var(--ink);
+            color: var(--bg);
         }
-        .brand { display: flex; align-items: center; gap: 11px; }
-        .brand-mark {
-            display: grid;
-            place-items: center;
-            width: 38px;
-            height: 38px;
-            border: 1px solid var(--line-strong);
-            border-radius: 7px;
-            background: var(--surface);
-            color: var(--accent);
-        }
-        .brand-mark svg { width: 21px; height: 21px; }
-        .brand-name {
-            display: block;
-            font-size: 1.08rem;
-            font-weight: 600;
-            letter-spacing: -0.01em;
-            line-height: 1.15;
-        }
-        .brand-sub {
-            display: block;
-            margin-top: 2px;
-            font-size: 0.7rem;
-            font-weight: 500;
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
-            color: var(--muted);
-        }
-        .topbar-meta {
-            display: flex;
-            align-items: center;
-            gap: 9px;
-            font-size: 0.72rem;
-            font-weight: 500;
-            color: var(--muted);
-            white-space: nowrap;
-        }
-        .live-dot {
-            width: 7px;
-            height: 7px;
-            border-radius: 50%;
-            background: var(--low);
-            box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.12);
-        }
-        .meta-sep { width: 1px; height: 12px; background: var(--line-strong); }
-        .version { font-variant-numeric: tabular-nums; }
-
-        .layout {
-            display: grid;
-            grid-template-columns: minmax(0, 1.03fr) minmax(0, 0.97fr);
-            gap: 20px;
-            align-items: start;
-            max-width: 1180px;
-            margin: 0 auto;
-        }
-
-        .panel {
-            background: var(--surface);
-            border: 1px solid var(--line);
-            border-radius: 8px;
-            overflow: hidden;
-        }
-        .panel-head {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 14px;
-            padding: 13px 18px;
-            border-bottom: 1px solid var(--line);
-            background: var(--surface-head);
-        }
-        .panel-head h2 {
-            display: flex;
-            align-items: center;
-            gap: 9px;
-            margin: 0;
-            font-size: 0.82rem;
-            font-weight: 600;
-            letter-spacing: 0.01em;
-        }
-        .icon { width: 16px; height: 16px; flex: none; color: var(--accent); }
-        .panel-meta {
-            font-size: 0.7rem;
-            font-weight: 500;
-            color: var(--muted);
-            font-variant-numeric: tabular-nums;
-        }
-        .panel-body { padding: 18px; }
-
-        .field-label {
-            display: block;
-            margin-bottom: 8px;
-            font-size: 0.68rem;
-            font-weight: 600;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            color: var(--muted);
-        }
-        textarea {
-            display: block;
-            width: 100%;
-            min-height: 336px;
-            resize: vertical;
-            padding: 14px;
-            border: 1px solid var(--line-strong);
-            border-radius: 6px;
-            background: var(--bg);
-            color: var(--text);
-            font-family: var(--font-mono);
-            font-size: 0.79rem;
-            line-height: 1.65;
-            caret-color: var(--accent);
-        }
-        textarea::placeholder { color: #5E6C82; }
-        textarea:focus-visible {
-            outline: none;
-            border-color: var(--accent);
-            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.12);
-        }
-
-        .controls {
-            display: flex;
-            align-items: flex-end;
-            justify-content: space-between;
-            gap: 16px;
-            margin-top: 16px;
-        }
-        .examples {
-            display: flex;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 6px;
-        }
-        .control-label {
-            margin-right: 3px;
-            font-size: 0.68rem;
-            font-weight: 600;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            color: var(--muted);
+        a {
+            color: inherit;
         }
         button {
-            font-family: var(--font-ui);
-            cursor: pointer;
+            font: inherit;
+            color: inherit;
         }
-        .examples button {
-            height: 34px;
-            padding: 0 11px;
-            border: 1px solid var(--line-strong);
-            border-radius: 5px;
-            background: transparent;
-            color: var(--muted);
-            font-size: 0.74rem;
-            font-weight: 500;
-            transition: color 150ms ease-out, border-color 150ms ease-out, background-color 150ms ease-out;
-        }
-        .examples button:hover {
-            color: var(--text);
-            border-color: #3B5273;
-            background: rgba(56, 189, 248, 0.06);
-        }
-        .primary {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            height: 42px;
-            padding: 0 16px;
-            border: 1px solid var(--accent);
-            border-radius: 6px;
-            background: var(--accent);
-            color: #06111F;
-            font-size: 0.8rem;
-            font-weight: 600;
-            transition: background-color 150ms ease-out, border-color 150ms ease-out, transform 80ms ease-out;
-        }
-        .primary svg { width: 16px; height: 16px; }
-        .primary:hover { background: var(--accent-strong); border-color: var(--accent-strong); }
-        .primary:active { transform: translateY(1px); }
-        .primary:disabled { opacity: 0.55; cursor: progress; }
-        button:focus-visible,
-        a:focus-visible {
-            outline: 2px solid var(--accent);
-            outline-offset: 2px;
+        :focus-visible {
+            outline: 1px solid var(--ink);
+            outline-offset: 4px;
         }
 
-        .status {
-            min-height: 1.4em;
-            margin: 13px 0 0;
-            font-size: 0.74rem;
-            color: var(--muted);
-        }
-        .status.error { color: var(--high); }
-
-        .readout[data-state="low"] { --state: var(--low); }
-        .readout[data-state="medium"] { --state: var(--medium); }
-        .readout[data-state="high"] { --state: var(--high); }
-
-        .badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 7px;
-            padding: 5px 9px;
-            border: 1px solid color-mix(in srgb, var(--state) 48%, transparent);
-            border-radius: 4px;
-            background: color-mix(in srgb, var(--state) 12%, transparent);
-            color: var(--state);
-            font-size: 0.66rem;
-            font-weight: 600;
-            letter-spacing: 0.07em;
-            text-transform: uppercase;
-            white-space: nowrap;
-            transition: color 180ms ease-out, border-color 180ms ease-out, background-color 180ms ease-out;
-        }
-        .badge::before {
-            content: "";
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background: currentColor;
+        .shell {
+            width: 100%;
+            max-width: 1600px;
+            margin-inline: auto;
+            padding-inline: var(--gutter);
         }
 
-        .score-block {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 6px 0 2px;
-        }
-        .ring-wrap {
-            position: relative;
-            width: 232px;
-            max-width: 100%;
-        }
-        .ring { display: block; width: 100%; height: auto; }
-        .ring-track,
-        .ring-fill {
-            fill: none;
-            stroke-width: 9;
-        }
-        .ring-track { stroke: #1C2940; }
-        .ring-fill {
-            stroke: var(--state);
-            stroke-linecap: round;
-            transform: rotate(-90deg);
-            transform-origin: 50% 50%;
-            stroke-dasharray: 591;
-            stroke-dashoffset: 591;
-            transition: stroke-dashoffset 650ms cubic-bezier(0.22, 1, 0.36, 1),
-                        stroke 180ms ease-out;
-        }
-        .ring-marks line { stroke: #2E405C; stroke-width: 1.5; }
-        .ring-center {
-            position: absolute;
-            inset: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 1px;
+        /* A single editorial rail, not a grid. */
+        .rail {
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: calc(var(--gutter) / 2);
+            width: 1px;
+            background: linear-gradient(
+                to bottom,
+                transparent 0,
+                var(--line) 8%,
+                var(--line) 92%,
+                transparent 100%
+            );
+            z-index: 1;
             pointer-events: none;
         }
-        .score-line {
+
+        /* Topbar */
+        .topbar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 5;
+            padding-top: 1.5rem;
+        }
+        .topbar-inner {
             display: flex;
             align-items: baseline;
-            gap: 4px;
-            font-variant-numeric: tabular-nums;
+            gap: 2rem;
         }
-        .score {
-            font-size: 3.4rem;
-            font-weight: 700;
-            line-height: 1;
-            letter-spacing: -0.035em;
-            color: var(--state);
-            transition: color 180ms ease-out;
-        }
-        .denom { font-size: 0.78rem; font-weight: 500; color: var(--muted); }
-        .ring-caption {
-            margin-top: 5px;
-            font-size: 0.64rem;
+        .brand {
+            font-size: 0.92rem;
             font-weight: 500;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            color: #66748A;
+            letter-spacing: -0.02em;
+            text-decoration: none;
         }
-
-        .legend {
+        .topnav {
             display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 6px 16px;
-            margin: 14px 0 0;
-            padding: 0;
-            list-style: none;
-            font-size: 0.66rem;
-            font-weight: 500;
-            color: var(--muted);
+            gap: clamp(1rem, 3vw, 2.5rem);
+            margin-left: auto;
         }
-        .legend li {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            opacity: 0.5;
-            transition: opacity 180ms ease-out;
-        }
-        .legend li.is-active { opacity: 1; color: var(--text); }
-        .swatch { width: 6px; height: 6px; border-radius: 50%; }
-        .swatch.low { background: var(--low); }
-        .swatch.medium { background: var(--medium); }
-        .swatch.high { background: var(--high); }
-
-        .block {
-            margin-top: 20px;
-            padding-top: 16px;
-            border-top: 1px solid var(--line);
-        }
-        .block-head {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 10px;
-            margin-bottom: 10px;
-        }
-        .block-head h3 {
-            display: flex;
-            align-items: center;
-            gap: 8px;
+        .topnav a {
             margin: 0;
-            font-size: 0.68rem;
-            font-weight: 600;
+            font-family: var(--mono);
+            font-size: 0.64rem;
+            font-weight: 400;
+            letter-spacing: 0.09em;
+            text-transform: uppercase;
+            color: var(--muted);
+            text-decoration: none;
+            transition: color 0.35s var(--ease-ui);
+        }
+        .topnav a:hover {
+            color: var(--ink);
+        }
+
+        /* Hero */
+        .hero {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            min-height: 88vh;
+            min-height: 88svh;
+            padding-top: clamp(8rem, 18vh, 14rem);
+            padding-bottom: 2rem;
+        }
+        .eyebrow {
+            margin: 0 0 clamp(1.2rem, 2.5vh, 2rem);
+            font-family: var(--mono);
+            font-size: 0.66rem;
             letter-spacing: 0.09em;
             text-transform: uppercase;
             color: var(--muted);
         }
-        .block-head .icon { width: 15px; height: 15px; }
-        .count {
-            font-size: 0.68rem;
-            font-weight: 500;
-            color: var(--muted);
-            font-variant-numeric: tabular-nums;
+        .title-mask {
+            overflow: hidden;
+            padding-bottom: 0.06em;
+            margin-bottom: -0.06em;
         }
-
-        .signals {
-            counter-reset: signal;
+        h1 {
             margin: 0;
-            padding: 0;
-            list-style: none;
+            font-family: var(--display);
+            font-size: clamp(3.25rem, 20vw, 15rem);
+            font-weight: 400;
+            line-height: 0.82;
+            letter-spacing: -0.065em;
+            white-space: nowrap;
         }
-        .signals li {
-            position: relative;
-            padding: 0 0 11px 27px;
-            font-size: 0.85rem;
-            line-height: 1.55;
-        }
-        .signals li:last-child { padding-bottom: 0; }
-        .signals li::before {
-            counter-increment: signal;
-            content: counter(signal, decimal-leading-zero);
-            position: absolute;
-            left: 0;
-            top: 2px;
-            font-size: 0.66rem;
-            font-weight: 500;
-            color: #66748A;
-            font-variant-numeric: tabular-nums;
-        }
-        .signals li.empty {
-            padding-left: 0;
-            color: var(--muted);
-            font-size: 0.79rem;
-        }
-        .signals li.empty::before { content: none; }
-
-        .sender {
+        .hero-foot {
             display: grid;
-            grid-template-columns: 76px minmax(0, 1fr);
-            margin: 0;
-        }
-        .sender dt,
-        .sender dd {
-            margin: 0;
-            padding: 8px 0;
+            grid-template-columns: minmax(0, 1.5fr) minmax(12rem, 0.6fr);
+            gap: clamp(2rem, 6vw, 6rem);
+            margin-top: clamp(2.5rem, 6vh, 5rem);
+            padding-top: 1.4rem;
             border-top: 1px solid var(--line);
         }
-        .sender dt {
+        .lede {
+            max-width: 47ch;
+            margin: 0;
+            font-size: clamp(0.95rem, 1.2vw, 1.06rem);
+            line-height: 1.65;
+            color: #B8B5AE;
+        }
+        .hero-meta {
+            justify-self: end;
+            min-width: 12rem;
+        }
+        .meta-label {
+            display: block;
+            margin-bottom: 0.7rem;
+            font-family: var(--mono);
+            font-size: 0.62rem;
+            letter-spacing: 0.09em;
+            text-transform: uppercase;
+            color: var(--faint);
+        }
+        .hero-meta p {
+            margin: 0;
+            font-family: var(--mono);
             font-size: 0.66rem;
-            font-weight: 600;
-            letter-spacing: 0.07em;
+            line-height: 2;
+            letter-spacing: 0.04em;
             text-transform: uppercase;
             color: var(--muted);
         }
-        .sender dd {
-            font-size: 0.82rem;
-            font-weight: 500;
-            overflow-wrap: anywhere;
+        .scroll-cue {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.7rem;
+            align-self: flex-start;
+            margin-top: auto;
+            padding-top: 4rem;
+            font-family: var(--mono);
+            font-size: 0.64rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--muted);
+            text-decoration: none;
+            transition: color 0.35s var(--ease-ui);
         }
-        .sender dd.muted { color: #66748A; }
+        .scroll-cue span:first-child {
+            color: var(--faint);
+        }
+        .scroll-arrow {
+            display: inline-block;
+            transition: transform 0.45s var(--ease-out);
+        }
+        .scroll-cue:hover {
+            color: var(--ink);
+        }
+        .scroll-cue:hover .scroll-arrow {
+            transform: translateY(4px);
+        }
 
-        .links {
+        /* Chapters */
+        .workspace,
+        .result,
+        .method {
+            position: relative;
+            z-index: 2;
+            padding-top: clamp(2rem, 4vw, 3.25rem);
+            border-top: 1px solid var(--line);
+        }
+        .workspace,
+        .result {
+            padding-bottom: clamp(5rem, 12vw, 10rem);
+        }
+        .section-head {
+            display: grid;
+            grid-template-columns: 2.5rem minmax(0, 1fr) auto;
+            gap: clamp(0.75rem, 2vw, 1.5rem);
+            align-items: baseline;
+            margin-bottom: clamp(2.5rem, 6vw, 5rem);
+        }
+        .section-index,
+        .section-meta {
+            font-family: var(--mono);
+            font-size: 0.64rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+        .section-meta {
+            text-align: right;
+        }
+        h2 {
+            margin: 0;
+            font-size: clamp(1.5rem, 3vw, 2.5rem);
+            font-weight: 400;
+            line-height: 1;
+            letter-spacing: -0.045em;
+        }
+
+        /* Analyzer */
+        .field-grid {
+            display: grid;
+            grid-template-columns: minmax(12rem, 0.85fr) minmax(0, 2.15fr);
+            gap: clamp(2rem, 6vw, 7rem);
+        }
+        .field-aside {
+            align-self: start;
+        }
+        .field-title {
+            margin: 0 0 1.3rem;
+            font-size: clamp(1.5rem, 2.6vw, 2.35rem);
+            line-height: 1.03;
+            letter-spacing: -0.045em;
+        }
+        .field-note {
+            max-width: 27ch;
+            margin: 0;
+            font-size: 0.85rem;
+            line-height: 1.65;
+            color: var(--muted);
+        }
+        .field-head {
+            display: flex;
+            justify-content: space-between;
+            gap: 1.5rem;
+            margin-bottom: 0.9rem;
+            font-family: var(--mono);
+            font-size: 0.64rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+        #char-count {
+            color: var(--faint);
+            white-space: nowrap;
+        }
+        textarea {
+            display: block;
+            width: 100%;
+            min-height: clamp(17rem, 31vw, 23rem);
+            margin: 0;
+            padding: 0 0 1.25rem;
+            border: 0;
+            border-bottom: 1px solid var(--line);
+            border-radius: 0;
+            background: transparent;
+            color: var(--ink);
+            font-family: var(--mono);
+            font-size: 0.8rem;
+            line-height: 1.75;
+            caret-color: var(--ink);
+            resize: vertical;
+            transition: border-color 0.4s var(--ease-ui);
+        }
+        textarea::placeholder {
+            color: var(--faint);
+            opacity: 1;
+        }
+        textarea:focus {
+            outline: none;
+            border-bottom-color: var(--ink);
+        }
+
+        .examples {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            gap: 0.8rem 1.5rem;
+            margin-top: 1.4rem;
+        }
+        .examples-label {
+            margin-right: 0.3rem;
+            font-family: var(--mono);
+            font-size: 0.62rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--faint);
+        }
+        .example {
+            padding: 0 0 0.2rem;
+            border: 0;
+            border-bottom: 1px solid transparent;
+            background: none;
+            font-family: var(--mono);
+            font-size: 0.68rem;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: var(--muted);
+            cursor: pointer;
+            transition: color 0.35s var(--ease-ui), border-color 0.35s var(--ease-ui);
+        }
+        .example span {
+            margin-right: 0.5em;
+            color: var(--faint);
+        }
+        .example:hover {
+            color: var(--ink);
+            border-bottom-color: var(--ink);
+        }
+
+        .analyze {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 2rem;
+            width: 100%;
+            margin-top: clamp(2.5rem, 5vw, 4rem);
+            padding: clamp(1.1rem, 2.2vw, 1.7rem) 0;
+            border: 0;
+            border-top: 1px solid var(--line);
+            border-bottom: 1px solid var(--line);
+            background: none;
+            color: var(--ink);
+            font-family: var(--display);
+            font-size: clamp(1.55rem, 3vw, 2.75rem);
+            font-weight: 400;
+            letter-spacing: -0.045em;
+            text-align: left;
+            cursor: pointer;
+            transition:
+                background-color 0.45s var(--ease-ui),
+                color 0.45s var(--ease-ui),
+                padding 0.45s var(--ease-out);
+        }
+        .btn-arrow {
+            flex: none;
+            width: clamp(1.4rem, 2.2vw, 2rem);
+            height: clamp(1.4rem, 2.2vw, 2rem);
+            transition: transform 0.5s var(--ease-out);
+        }
+        .analyze:hover {
+            padding-inline: clamp(0.75rem, 1.5vw, 1.5rem);
+            background: var(--ink);
+            color: var(--bg);
+        }
+        .analyze:hover .btn-arrow {
+            transform: translateX(6px);
+        }
+        .analyze:disabled {
+            padding-inline: 0;
+            background: none;
+            color: var(--muted);
+            cursor: progress;
+        }
+        .analyze:disabled .btn-arrow {
+            transform: none;
+        }
+        .status {
+            min-height: 1.5em;
+            margin: 1rem 0 0;
+            font-family: var(--mono);
+            font-size: 0.66rem;
+            letter-spacing: 0.03em;
+            color: var(--muted);
+        }
+        .status.is-error {
+            color: var(--high);
+        }
+
+        /* Result */
+        #readout[data-state="low"] { --state: var(--low); }
+        #readout[data-state="medium"] { --state: var(--mid); }
+        #readout[data-state="high"] { --state: var(--high); }
+
+        .score-area {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: clamp(2rem, 5vw, 5rem);
+            flex-wrap: wrap;
+        }
+        .score-main {
+            display: flex;
+            align-items: flex-end;
+            gap: clamp(0.7rem, 1.5vw, 1.4rem);
+        }
+        #score {
+            display: block;
+            font-size: clamp(6.5rem, 25vw, 23rem);
+            font-weight: 400;
+            line-height: 0.74;
+            letter-spacing: -0.08em;
+            font-variant-numeric: tabular-nums;
+            font-feature-settings: "tnum" 1;
+            color: var(--ink);
+        }
+        #readout[data-state="idle"] #score {
+            color: var(--muted);
+            font-size: clamp(4rem, 13vw, 9rem);
+        }
+        .score-of {
+            padding-bottom: clamp(0.8rem, 2vw, 2rem);
+            font-family: var(--mono);
+            font-size: 0.7rem;
+            letter-spacing: 0.05em;
+            color: var(--muted);
+        }
+        .score-side {
+            max-width: 31ch;
+            padding-bottom: 0.35rem;
+        }
+        .state {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+            font-family: var(--mono);
+            font-size: 0.66rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--ink);
+        }
+        .state-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--state);
+            transition: background-color 0.4s var(--ease-ui);
+        }
+        #score-caption {
+            margin: 0.85rem 0 0;
+            font-size: 0.88rem;
+            line-height: 1.6;
+            color: var(--muted);
+        }
+        .score-bar {
+            height: 2px;
+            margin-top: clamp(2.25rem, 5vw, 3.5rem);
+            background: var(--line);
+            overflow: hidden;
+        }
+        #score-fill {
+            display: block;
+            width: 100%;
+            height: 100%;
+            background: var(--state);
+            transform: scaleX(0);
+            transform-origin: left center;
+            transition:
+                transform 0.9s var(--ease-out),
+                background-color 0.4s var(--ease-ui);
+        }
+
+        .result-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.55fr) minmax(15rem, 0.75fr);
+            gap: clamp(2rem, 6vw, 7rem);
+            margin-top: clamp(3rem, 8vw, 6rem);
+        }
+        .block-head {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 1.5rem;
+            padding-top: 0.9rem;
+            border-top: 1px solid var(--line);
+            margin-bottom: 0.4rem;
+        }
+        .block-head h3 {
+            margin: 0;
+            font-family: var(--mono);
+            font-size: 0.64rem;
+            font-weight: 400;
+            letter-spacing: 0.09em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+        .block-head span {
+            font-family: var(--mono);
+            font-size: 0.66rem;
+            color: var(--faint);
+        }
+        #reasons {
+            list-style: none;
             margin: 0;
             padding: 0;
-            list-style: none;
         }
-        .links li {
-            padding: 9px 0;
-            border-top: 1px solid var(--line);
+        #reasons li {
+            display: grid;
+            grid-template-columns: 2.2rem minmax(0, 1fr);
+            gap: 1rem;
+            padding: 1.15rem 0;
+            border-bottom: 1px solid var(--line);
+            font-size: clamp(0.98rem, 1.25vw, 1.14rem);
+            line-height: 1.5;
+        }
+        #reasons li .num {
+            padding-top: 0.24rem;
+            font-family: var(--mono);
+            font-size: 0.62rem;
+            color: var(--faint);
+        }
+        #reasons li.empty {
+            display: block;
+            padding: 1.15rem 0;
+            color: var(--muted);
+            font-size: 0.92rem;
+        }
+        .sender dl {
+            margin: 0;
+        }
+        .sender-row {
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--line);
+        }
+        .sender dt {
+            margin-bottom: 0.35rem;
+            font-family: var(--mono);
+            font-size: 0.6rem;
+            letter-spacing: 0.09em;
+            text-transform: uppercase;
+            color: var(--faint);
+        }
+        .sender dd {
+            margin: 0;
+            font-size: 0.9rem;
+            line-height: 1.55;
             overflow-wrap: anywhere;
         }
-        .links li:last-child { padding-bottom: 0; }
-        .links li.empty {
-            border-top: 0;
+        .sender dd.is-muted {
+            color: var(--muted);
+        }
+        .links-block {
+            margin-top: clamp(2.5rem, 6vw, 5rem);
+        }
+        #links {
+            list-style: none;
+            margin: 0;
             padding: 0;
-            color: var(--muted);
-            font-size: 0.79rem;
         }
-        .links a {
-            color: var(--text);
-            font-size: 0.83rem;
-            font-weight: 500;
-            text-decoration: underline;
-            text-decoration-color: #3B5273;
-            text-underline-offset: 3px;
-            transition: color 150ms ease-out, text-decoration-color 150ms ease-out;
+        #links li {
+            padding: 1.1rem 0;
+            border-bottom: 1px solid var(--line);
         }
-        .links a:hover {
-            color: var(--accent-strong);
-            text-decoration-color: var(--accent);
+        #links a {
+            font-size: clamp(1rem, 1.45vw, 1.25rem);
+            line-height: 1.4;
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            overflow-wrap: anywhere;
+            transition: border-color 0.35s var(--ease-ui), color 0.35s var(--ease-ui);
         }
-        .links a.is-url {
-            font-family: var(--font-mono);
-            font-size: 0.73rem;
-            font-weight: 400;
+        #links a:hover {
+            border-bottom-color: var(--ink);
         }
-        .links a .external {
-            display: inline-block;
-            width: 12px;
-            height: 12px;
-            margin-left: 5px;
-            vertical-align: -1px;
-            color: var(--muted);
+        #links a.is-url {
+            font-family: var(--mono);
+            font-size: 0.8rem;
+            line-height: 1.7;
         }
         .link-url {
             display: block;
-            margin-top: 3px;
-            font-family: var(--font-mono);
-            font-size: 0.69rem;
-            line-height: 1.5;
+            margin-top: 0.4rem;
+            font-family: var(--mono);
+            font-size: 0.7rem;
+            line-height: 1.6;
+            color: var(--muted);
+            overflow-wrap: anywhere;
+        }
+        #links li.empty {
+            color: var(--muted);
+            font-size: 0.92rem;
+        }
+
+        /* Method */
+        .method {
+            padding-bottom: clamp(5rem, 12vw, 10rem);
+        }
+        .method-intro {
+            max-width: 56ch;
+            margin: 0 0 clamp(2.5rem, 5vw, 4rem);
+            font-size: clamp(1rem, 1.35vw, 1.12rem);
+            line-height: 1.65;
+            color: var(--muted);
+        }
+        .bands {
+            border-top: 1px solid var(--line);
+        }
+        .band {
+            display: grid;
+            grid-template-columns: minmax(10rem, 1fr) minmax(6rem, 0.55fr) minmax(0, 1.9fr);
+            gap: clamp(1rem, 3vw, 3rem);
+            align-items: baseline;
+            padding: clamp(1.2rem, 2.4vw, 1.9rem) 0;
+            border-bottom: 1px solid var(--line);
+        }
+        .band[data-state="low"] { --band: var(--low); }
+        .band[data-state="medium"] { --band: var(--mid); }
+        .band[data-state="high"] { --band: var(--high); }
+        .band-name {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: clamp(1.35rem, 2.3vw, 2.1rem);
+            line-height: 1;
+            letter-spacing: -0.04em;
+        }
+        .band-name::before {
+            content: "";
+            flex: none;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--band);
+        }
+        .band-range {
+            font-family: var(--mono);
+            font-size: 0.66rem;
+            letter-spacing: 0.05em;
+            color: var(--muted);
+        }
+        .band p {
+            max-width: 52ch;
+            margin: 0;
+            font-size: 0.88rem;
+            line-height: 1.65;
             color: var(--muted);
         }
 
+        /* Footer */
         .footer {
+            position: relative;
+            z-index: 2;
+            padding: 1.75rem 0 2.5rem;
+            border-top: 1px solid var(--line);
+        }
+        .footer-inner {
             display: flex;
             justify-content: space-between;
+            gap: 1rem 2rem;
             flex-wrap: wrap;
-            gap: 12px;
-            max-width: 1180px;
-            margin: 22px auto 0;
-            padding-top: 14px;
-            border-top: 1px solid var(--line);
-            font-size: 0.66rem;
-            color: #66748A;
+        }
+        .footer p {
+            margin: 0;
+            font-family: var(--mono);
+            font-size: 0.62rem;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+
+        /* Cursor */
+        html.custom-cursor,
+        html.custom-cursor body,
+        html.custom-cursor a,
+        html.custom-cursor button {
+            cursor: none;
+        }
+        html.custom-cursor textarea,
+        html.custom-cursor input {
+            cursor: text;
+        }
+        .cursor {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 9999;
+            width: 14px;
+            height: 14px;
+            border: 1px solid rgba(242, 240, 235, 0.55);
+            border-radius: 50%;
+            pointer-events: none;
+            opacity: 0;
+            transform: translate3d(-100px, -100px, 0) translate(-50%, -50%);
+            mix-blend-mode: difference;
+            transition:
+                width 0.35s var(--ease-ui),
+                height 0.35s var(--ease-ui),
+                background-color 0.35s var(--ease-ui),
+                border-color 0.35s var(--ease-ui),
+                opacity 0.25s var(--ease-ui);
+            will-change: transform;
+        }
+        .cursor.is-visible {
+            opacity: 1;
+        }
+        .cursor.is-active {
+            width: 34px;
+            height: 34px;
+            border-color: transparent;
+            background: rgba(242, 240, 235, 0.08);
+        }
+
+        /* Motion */
+        @keyframes fade-down {
+            from { opacity: 0; transform: translateY(-8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fade-up {
+            from { opacity: 0; transform: translateY(16px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes title-rise {
+            from { transform: translateY(108%); }
+            to { transform: translateY(0); }
+        }
+        @keyframes score-in {
+            from { opacity: 0; transform: translateY(22px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes row-in {
+            from { opacity: 0; transform: translateY(9px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         @media (prefers-reduced-motion: no-preference) {
-            .signals li:not(.empty) {
-                animation: signal-in 200ms ease-out both;
+            .topbar { animation: fade-down 0.9s var(--ease-out) both; }
+            .eyebrow { animation: fade-up 0.8s var(--ease-out) 0.12s both; }
+            .title-mask h1 { animation: title-rise 1.15s var(--ease-out) 0.2s both; }
+            .hero-foot { animation: fade-up 0.9s var(--ease-out) 0.38s both; }
+            .scroll-cue { animation: fade-up 0.9s var(--ease-out) 0.52s both; }
+            .workspace { animation: fade-up 0.8s var(--ease-out) 0.28s both; }
+
+            .result.has-result .score-main {
+                animation: score-in 0.9s var(--ease-out) both;
             }
+            .result.has-result #reasons li:not(.empty),
+            .result.has-result #links li:not(.empty) {
+                animation: row-in 0.6s var(--ease-out) both;
+            }
+            .result.has-result .sender-row {
+                animation: row-in 0.6s var(--ease-out) both;
+            }
+            .result.has-result .sender-row:nth-child(2) { animation-delay: 0.08s; }
+            .result.has-result .sender-row:nth-child(3) { animation-delay: 0.16s; }
         }
-        @keyframes signal-in {
-            from { opacity: 0; transform: translateY(3px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+
         @media (prefers-reduced-motion: reduce) {
-            *, *::before, *::after {
+            html { scroll-behavior: auto; }
+            *,
+            *::before,
+            *::after {
                 animation-duration: 0.01ms !important;
+                animation-delay: 0ms !important;
                 animation-iteration-count: 1 !important;
                 transition-duration: 0.01ms !important;
             }
         }
 
-        @media (max-width: 960px) {
-            body { padding: 20px 20px 30px; }
-            .layout { grid-template-columns: 1fr; }
+        /* Responsive */
+        @media (max-width: 900px) {
+            .field-grid {
+                grid-template-columns: 1fr;
+                gap: 2.25rem;
+            }
+            .field-note {
+                max-width: 44ch;
+            }
+            .result-grid {
+                grid-template-columns: 1fr;
+                gap: 3rem;
+            }
+            .score-side {
+                padding-bottom: 0;
+            }
         }
-        @media (max-width: 620px) {
-            body { padding: 16px 14px 26px; }
-            .topbar { flex-wrap: wrap; gap: 12px; }
-            .topbar-meta { width: 100%; }
-            textarea { min-height: 280px; }
-            .controls { flex-direction: column; align-items: stretch; }
-            .primary { width: 100%; }
-            .sender { grid-template-columns: 68px minmax(0, 1fr); }
-            .ring-wrap { width: 208px; }
-            .score { font-size: 3rem; }
-            .footer { flex-direction: column; gap: 6px; }
+
+        @media (max-width: 720px) {
+            .hero {
+                min-height: 82vh;
+                min-height: 82svh;
+                padding-top: clamp(7rem, 15vh, 9rem);
+            }
+            .hero-foot {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+            .hero-meta {
+                justify-self: start;
+            }
+            .section-head {
+                grid-template-columns: 2rem minmax(0, 1fr);
+                row-gap: 0.4rem;
+            }
+            .section-meta {
+                grid-column: 2;
+                text-align: left;
+            }
+            .band {
+                grid-template-columns: 1fr auto;
+                row-gap: 0.8rem;
+            }
+            .band p {
+                grid-column: 1 / -1;
+                max-width: none;
+            }
+            .band-name {
+                font-size: 1.5rem;
+            }
+            .score-side {
+                max-width: 100%;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .topnav {
+                gap: 1rem;
+            }
+            .topnav a {
+                font-size: 0.6rem;
+            }
+            .topbar {
+                padding-top: 1.2rem;
+            }
+            .hero {
+                padding-top: 6.5rem;
+            }
+            .eyebrow {
+                font-size: 0.6rem;
+            }
+            textarea {
+                min-height: 19rem;
+                font-size: 0.76rem;
+            }
+            .examples {
+                gap: 0.7rem 1.1rem;
+            }
+            .example {
+                font-size: 0.64rem;
+            }
+            .analyze {
+                gap: 1rem;
+            }
+            #score {
+                font-size: clamp(6.5rem, 32vw, 10rem);
+            }
+            .footer p {
+                font-size: 0.58rem;
+            }
         }
     </style>
 </head>
 <body>
+    <div class="rail" aria-hidden="true"></div>
+
     <header class="topbar">
-        <div class="brand">
-            <span class="brand-mark" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z" />
-                    <circle cx="12" cy="12" r="3" />
-                </svg>
-            </span>
-            <span>
-                <span class="brand-name">PhishLens</span>
-                <span class="brand-sub">Email threat analysis</span>
-            </span>
-        </div>
-        <div class="topbar-meta">
-            <span class="live-dot" aria-hidden="true"></span>
-            <span>Local instance</span>
-            <span class="meta-sep" aria-hidden="true"></span>
-            <span class="version">v0.1</span>
+        <div class="shell topbar-inner">
+            <a class="brand" href="/">PhishLens</a>
+            <nav class="topnav" aria-label="Sections">
+                <a href="#analyzer">Analyzer</a>
+                <a href="#method">Method</a>
+            </nav>
         </div>
     </header>
 
-    <main class="layout">
-        <section class="panel" aria-labelledby="evidence-title">
-            <header class="panel-head">
-                <h2 id="evidence-title">
-                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <rect x="3" y="5" width="18" height="14" rx="2" />
-                        <path d="m3 7 9 6 9-6" />
-                    </svg>
-                    Evidence
-                </h2>
-                <span class="panel-meta" id="char-count">0 chars</span>
-            </header>
-            <div class="panel-body">
-                <label class="field-label" for="email-input">Raw email</label>
-                <textarea id="email-input" spellcheck="false" placeholder="Paste the full email here, headers and all..."></textarea>
-
-                <div class="controls">
-                    <div class="examples" role="group" aria-label="Load an example email">
-                        <span class="control-label">Examples</span>
-                        <button type="button" data-example="1">Example 1</button>
-                        <button type="button" data-example="2">Example 2</button>
-                        <button type="button" data-example="3">Example 3</button>
-                    </div>
-                    <button type="button" id="analyze" class="primary">
-                        <span class="run-label">Analyze email</span>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <path d="M5 12h14" />
-                            <path d="m13 6 6 6-6 6" />
-                        </svg>
-                    </button>
-                </div>
-
-                <p class="status" id="status" role="status" aria-live="polite">Paste an email or load an example.</p>
+    <main>
+        <section class="hero shell" aria-labelledby="page-title">
+            <p class="eyebrow">Email threat analysis — raw headers, read plainly</p>
+            <div class="title-mask">
+                <h1 id="page-title">PhishLens</h1>
             </div>
+
+            <div class="hero-foot">
+                <p class="lede">
+                    A quiet instrument for suspicious email. Paste the message and PhishLens reads the headers,
+                    the links, and the pressure — then shows you exactly what raised its concern.
+                </p>
+                <div class="hero-meta">
+                    <span class="meta-label">Signals</span>
+                    <p>
+                        Reply-to mismatch<br>
+                        Misleading link target<br>
+                        Urgency language<br>
+                        Payment or login pressure
+                    </p>
+                </div>
+            </div>
+
+            <a class="scroll-cue" href="#analyzer">
+                <span>01</span> Begin analysis <span class="scroll-arrow" aria-hidden="true">↓</span>
+            </a>
         </section>
 
-        <section class="panel readout" id="readout" data-state="idle" aria-labelledby="readout-title">
-            <header class="panel-head">
-                <h2 id="readout-title">
-                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <circle cx="12" cy="12" r="9" />
-                        <path d="M12 3v3M12 18v3M3 12h3M18 12h3" />
-                        <circle cx="12" cy="12" r="2.5" />
-                    </svg>
-                    Threat score
-                </h2>
-                <span class="badge" id="badge">Awaiting sample</span>
-            </header>
-            <div class="panel-body">
-                <div class="score-block">
-                    <div class="ring-wrap">
-                        <svg class="ring" viewBox="0 0 220 220" role="img" aria-label="Phishing risk score out of 100">
-                            <circle class="ring-track" cx="110" cy="110" r="94" />
-                            <circle class="ring-fill" id="gauge-fill" cx="110" cy="110" r="94" />
-                            <g class="ring-marks" aria-hidden="true">
-                                <line x1="204.1" y1="140.6" x2="210.8" y2="142.8" />
-                                <line x1="51.8" y1="190.1" x2="47.7" y2="195.8" />
-                            </g>
-                        </svg>
-                        <div class="ring-center">
-                            <span class="score-line">
-                                <span class="score" id="score">—</span>
-                                <span class="denom">/100</span>
-                            </span>
-                            <span class="ring-caption">Risk score</span>
-                        </div>
-                    </div>
+        <section class="workspace shell" id="analyzer" aria-labelledby="analyzer-title">
+            <div class="section-head">
+                <span class="section-index">01</span>
+                <h2 id="analyzer-title">Analyzer</h2>
+                <span class="section-meta">Raw email · one message at a time</span>
+            </div>
 
-                    <ul class="legend" aria-label="Score ranges">
-                        <li data-range="low"><span class="swatch low"></span>0–29 Low</li>
-                        <li data-range="medium"><span class="swatch medium"></span>30–59 Suspicious</li>
-                        <li data-range="high"><span class="swatch high"></span>60–100 High</li>
-                    </ul>
+            <div class="field-grid">
+                <aside class="field-aside">
+                    <p class="field-title">Paste the<br>email.</p>
+                    <p class="field-note">
+                        Headers, body, links — the whole message. Every score comes from the text you provide.
+                    </p>
+                </aside>
+
+                <div class="field">
+                    <div class="field-head">
+                        <label for="email-input">Raw message</label>
+                        <span id="char-count">0 characters</span>
+                    </div>
+                    <textarea id="email-input" rows="10" spellcheck="false" placeholder="Paste the raw email here — headers, body, links."></textarea>
+
+                    <div class="examples" role="group" aria-label="Load an example email">
+                        <span class="examples-label">Examples</span>
+                        <button type="button" class="example" data-example="1" aria-label="Load example 1"><span>01</span>Example</button>
+                        <button type="button" class="example" data-example="2" aria-label="Load example 2"><span>02</span>Example</button>
+                        <button type="button" class="example" data-example="3" aria-label="Load example 3"><span>03</span>Example</button>
+                    </div>
                 </div>
+            </div>
 
-                <section class="block" aria-labelledby="signals-title">
+            <button type="button" id="analyze" class="analyze">
+                <span class="btn-label">Analyze email</span>
+                <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M5 12h14"></path>
+                    <path d="m13 6 6 6-6 6"></path>
+                </svg>
+            </button>
+
+            <p class="status" id="status" role="status" aria-live="polite">Paste an email or load an example.</p>
+        </section>
+
+        <section class="result shell" id="readout" data-state="idle" aria-labelledby="result-title">
+            <div class="section-head">
+                <span class="section-index">02</span>
+                <h2 id="result-title">Result</h2>
+                <span class="section-meta">Score out of 100</span>
+            </div>
+
+            <div class="score-area">
+                <div class="score-main">
+                    <span id="score" aria-label="Phishing risk score">—</span>
+                    <span class="score-of">/100</span>
+                </div>
+                <div class="score-side">
+                    <span class="state" id="badge" data-state="idle">
+                        <span class="state-dot" aria-hidden="true"></span>
+                        <span id="state-label">Awaiting sample</span>
+                    </span>
+                    <p id="score-caption">Paste a message to read its score.</p>
+                </div>
+            </div>
+
+            <div class="score-bar" aria-hidden="true">
+                <span id="score-fill"></span>
+            </div>
+
+            <div class="result-grid">
+                <section aria-labelledby="reasons-title">
                     <div class="block-head">
-                        <h3 id="signals-title">
-                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <circle cx="12" cy="12" r="9" />
-                                <path d="M12 8v4M12 16h.01" />
-                            </svg>
-                            Signals
-                        </h3>
-                        <span class="count" id="reason-count">0</span>
+                        <h3 id="reasons-title">Reasons</h3>
+                        <span id="reason-count">0</span>
                     </div>
-                    <ol class="signals" id="reasons">
+                    <ol id="reasons">
                         <li class="empty">No analysis yet. Load an example to begin.</li>
                     </ol>
                 </section>
 
-                <section class="block" aria-labelledby="sender-title">
+                <section class="sender" aria-labelledby="sender-title">
                     <div class="block-head">
-                        <h3 id="sender-title">
-                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                                <circle cx="12" cy="7" r="4" />
-                            </svg>
-                            Sender
-                        </h3>
+                        <h3 id="sender-title">Sender</h3>
                     </div>
-                    <dl class="sender">
-                        <dt>From</dt><dd class="muted" id="sender">—</dd>
-                        <dt>Domain</dt><dd class="muted" id="sender-domain">—</dd>
-                        <dt>Reply-to</dt><dd class="muted" id="reply-to">—</dd>
+                    <dl>
+                        <div class="sender-row">
+                            <dt>From</dt>
+                            <dd id="sender" class="is-muted">—</dd>
+                        </div>
+                        <div class="sender-row">
+                            <dt>Domain</dt>
+                            <dd id="sender-domain" class="is-muted">—</dd>
+                        </div>
+                        <div class="sender-row">
+                            <dt>Reply-to</dt>
+                            <dd id="reply-to" class="is-muted">—</dd>
+                        </div>
                     </dl>
                 </section>
+            </div>
 
-                <section class="block" aria-labelledby="links-title">
-                    <div class="block-head">
-                        <h3 id="links-title">
-                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-                                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-                            </svg>
-                            Links
-                        </h3>
-                        <span class="count" id="link-count">0</span>
-                    </div>
-                    <ul class="links" id="links">
-                        <li class="empty">—</li>
-                    </ul>
-                </section>
+            <section class="links-block" aria-labelledby="links-title">
+                <div class="block-head">
+                    <h3 id="links-title">Links</h3>
+                    <span id="link-count">0</span>
+                </div>
+                <ul id="links">
+                    <li class="empty">No links found yet.</li>
+                </ul>
+            </section>
+        </section>
+
+        <section class="method shell" id="method" aria-labelledby="method-title">
+            <div class="section-head">
+                <span class="section-index">03</span>
+                <h2 id="method-title">Method</h2>
+                <span class="section-meta">How to read the number</span>
+            </div>
+
+            <p class="method-intro">
+                Four independent signals add points: reply-to mismatch, misleading link text, urgency language,
+                and a link that asks for payment or a login. A stacking bonus applies when several fire together,
+                because unrelated warning signs are stronger evidence than any one alone.
+            </p>
+
+            <div class="bands">
+                <div class="band" data-state="low">
+                    <span class="band-name">Low</span>
+                    <span class="band-range">00–29</span>
+                    <p>Little or no evidence of phishing. Still verify unusual requests through a channel you already trust.</p>
+                </div>
+                <div class="band" data-state="medium">
+                    <span class="band-name">Suspicious</span>
+                    <span class="band-range">30–59</span>
+                    <p>One or more real warning signs. Confirm the sender before you reply, pay, or sign in.</p>
+                </div>
+                <div class="band" data-state="high">
+                    <span class="band-name">High</span>
+                    <span class="band-range">60–100</span>
+                    <p>Several independent signals stack up. Treat the message as hostile and do not use its links.</p>
+                </div>
             </div>
         </section>
     </main>
 
     <footer class="footer">
-        <span>PhishLens · Local analysis</span>
-        <span>Signals: reply-to · link target · urgency · payment/login</span>
+        <div class="shell footer-inner">
+            <p>PhishLens — email threat analysis</p>
+            <p>Scores are a reading aid, not a verdict</p>
+        </div>
     </footer>
 
     <script>
@@ -715,29 +1100,42 @@
 
         const input = document.getElementById("email-input");
         const analyzeButton = document.getElementById("analyze");
+        const analyzeLabel = analyzeButton.querySelector(".btn-label");
         const status = document.getElementById("status");
         const readout = document.getElementById("readout");
         const badge = document.getElementById("badge");
+        const stateLabel = document.getElementById("state-label");
         const score = document.getElementById("score");
-        const ring = document.querySelector(".ring");
-        const gaugeFill = document.getElementById("gauge-fill");
+        const scoreCaption = document.getElementById("score-caption");
+        const scoreFill = document.getElementById("score-fill");
         const reasonCount = document.getElementById("reason-count");
         const linkCount = document.getElementById("link-count");
         const charCount = document.getElementById("char-count");
-        const legendItems = [...document.querySelectorAll(".legend li")];
 
-        const ringLength = 2 * Math.PI * 94;
-        gaugeFill.style.strokeDasharray = `${ringLength}`;
-        gaugeFill.style.strokeDashoffset = `${ringLength}`;
+        const RISK = {
+            low: {
+                label: "Low risk",
+                caption: "Little or no evidence of phishing was found.",
+            },
+            medium: {
+                label: "Suspicious",
+                caption: "Some warning signs are present. Verify the sender before acting.",
+            },
+            high: {
+                label: "High risk",
+                caption: "Several independent warning signs stack up. Do not use the links.",
+            },
+        };
 
         function setStatus(message, isError = false) {
             status.textContent = message;
-            status.classList.toggle("error", isError);
+            status.classList.toggle("is-error", isError);
         }
 
         function setBusy(busy) {
             analyzeButton.disabled = busy;
-            analyzeButton.querySelector(".run-label").textContent = busy ? "Analyzing..." : "Analyze email";
+            analyzeButton.setAttribute("aria-busy", String(busy));
+            analyzeLabel.textContent = busy ? "Reading..." : "Analyze email";
         }
 
         function show(value) {
@@ -746,30 +1144,36 @@
         }
 
         function riskFor(value) {
-            if (value >= 60) return { state: "high", label: "High risk" };
-            if (value >= 30) return { state: "medium", label: "Suspicious" };
-            return { state: "low", label: "Low risk" };
+            if (value >= 60) return "high";
+            if (value >= 30) return "medium";
+            return "low";
         }
 
-        function setLegend(state) {
-            for (const item of legendItems) {
-                item.classList.toggle("is-active", item.dataset.range === state);
-            }
+        function setState(state, label, caption) {
+            readout.dataset.state = state;
+            badge.dataset.state = state;
+            stateLabel.textContent = label;
+            scoreCaption.textContent = caption;
         }
 
         function setOrigin(id, value) {
             const node = document.getElementById(id);
             node.textContent = show(value);
-            node.classList.toggle("muted", node.textContent === "—");
+            node.classList.toggle("is-muted", node.textContent === "—");
+        }
+
+        function restartResultAnimation() {
+            readout.classList.remove("has-result");
+            void readout.offsetWidth;
+            readout.classList.add("has-result");
         }
 
         function resetReadout() {
-            readout.dataset.state = "idle";
-            badge.textContent = "Awaiting sample";
+            readout.classList.remove("has-result");
+            setState("idle", "Awaiting sample", "Paste a message to read its score.");
             score.textContent = "—";
-            ring.setAttribute("aria-label", "Phishing risk score out of 100");
-            gaugeFill.style.strokeDashoffset = `${ringLength}`;
-            setLegend("idle");
+            score.setAttribute("aria-label", "Phishing risk score");
+            scoreFill.style.transform = "scaleX(0)";
             reasonCount.textContent = "0";
             linkCount.textContent = "0";
 
@@ -788,19 +1192,18 @@
             links.replaceChildren();
             const linkItem = document.createElement("li");
             linkItem.className = "empty";
-            linkItem.textContent = "—";
+            linkItem.textContent = "No links found yet.";
             links.append(linkItem);
         }
 
         function render(data) {
-            const risk = riskFor(data.score);
-            readout.dataset.state = risk.state;
-            badge.textContent = risk.label;
-            score.textContent = data.score;
-            ring.setAttribute("aria-label", `Phishing risk score ${data.score} out of 100`);
-            gaugeFill.style.strokeDashoffset =
-                `${ringLength * (1 - Math.max(0, Math.min(100, data.score)) / 100)}`;
-            setLegend(risk.state);
+            const state = riskFor(data.score);
+            const risk = RISK[state];
+
+            setState(state, risk.label, risk.caption);
+            score.textContent = String(data.score);
+            score.setAttribute("aria-label", `Phishing risk score ${data.score} out of 100`);
+            scoreFill.style.transform = `scaleX(${Math.max(0, Math.min(100, data.score)) / 100})`;
 
             const reasons = document.getElementById("reasons");
             reasons.replaceChildren();
@@ -813,8 +1216,16 @@
             }
             data.reasons.forEach((reason, index) => {
                 const item = document.createElement("li");
-                item.textContent = reason;
-                item.style.animationDelay = `${index * 25}ms`;
+                item.style.animationDelay = `${Math.min(index * 55, 330)}ms`;
+
+                const number = document.createElement("span");
+                number.className = "num";
+                number.textContent = String(index + 1).padStart(2, "0");
+
+                const text = document.createElement("span");
+                text.textContent = reason;
+
+                item.append(number, text);
                 reasons.append(item);
             });
 
@@ -831,41 +1242,30 @@
                 item.textContent = "No links found.";
                 links.append(item);
             }
-            for (const link of data.links) {
+            data.links.forEach((link, index) => {
                 const item = document.createElement("li");
+                item.style.animationDelay = `${Math.min(index * 55, 220)}ms`;
+
+                const hasText = Boolean(link.text) && link.text !== link.url;
                 const anchor = document.createElement("a");
                 anchor.href = link.url;
-                anchor.textContent = link.text || link.url;
+                anchor.textContent = hasText ? link.text : link.url;
                 anchor.target = "_blank";
                 anchor.rel = "noopener noreferrer";
-
-                const hasDisplayText = Boolean(link.text) && link.text !== link.url;
-                if (!hasDisplayText) anchor.classList.add("is-url");
-                if (hasDisplayText) {
-                    const external = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-                    external.setAttribute("class", "external");
-                    external.setAttribute("viewBox", "0 0 24 24");
-                    external.setAttribute("fill", "none");
-                    external.setAttribute("stroke", "currentColor");
-                    external.setAttribute("stroke-width", "1.8");
-                    external.setAttribute("stroke-linecap", "round");
-                    external.setAttribute("stroke-linejoin", "round");
-                    external.setAttribute("aria-hidden", "true");
-                    external.innerHTML =
-                        '<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />' +
-                        '<path d="M15 3h6v6" />' +
-                        '<path d="M10 14 21 3" />';
-                    anchor.append(external);
-                }
+                if (!hasText) anchor.classList.add("is-url");
                 item.append(anchor);
-                if (hasDisplayText) {
+
+                if (hasText) {
                     const url = document.createElement("span");
                     url.className = "link-url";
                     url.textContent = link.url;
                     item.append(url);
                 }
                 links.append(item);
-            }
+            });
+
+            restartResultAnimation();
+            setStatus(`Analysis complete — score ${data.score}/100.`);
         }
 
         async function loadExample(number) {
@@ -875,7 +1275,7 @@
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 input.value = await response.text();
                 input.scrollTop = 0;
-                charCount.textContent = `${input.value.length.toLocaleString()} chars`;
+                charCount.textContent = `${input.value.length.toLocaleString()} characters`;
                 resetReadout();
                 setStatus(`Example ${number} loaded. Ready to analyze.`);
             } catch (error) {
@@ -895,7 +1295,7 @@
             }
 
             setBusy(true);
-            setStatus("Analyzing...");
+            setStatus("Reading...");
             try {
                 const response = await fetch("/analyze", {
                     method: "POST",
@@ -916,7 +1316,6 @@
 
                 const data = await response.json();
                 render(data);
-                setStatus(`Analysis complete — score ${data.score}/100.`);
             } catch (error) {
                 setStatus(
                     `Analysis failed (${error.message}). ` +
@@ -929,12 +1328,75 @@
         }
 
         input.addEventListener("input", () => {
-            charCount.textContent = `${input.value.length.toLocaleString()} chars`;
+            charCount.textContent = `${input.value.length.toLocaleString()} characters`;
         });
+
         for (const button of document.querySelectorAll("[data-example]")) {
             button.addEventListener("click", () => loadExample(button.dataset.example));
         }
         analyzeButton.addEventListener("click", analyze);
+
+        (() => {
+            const finePointer = window.matchMedia("(pointer: fine)").matches;
+            const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+            if (!window.PointerEvent || !finePointer || reducedMotion) return;
+
+            const cursor = document.createElement("div");
+            cursor.className = "cursor";
+            cursor.setAttribute("aria-hidden", "true");
+            document.body.append(cursor);
+            document.documentElement.classList.add("custom-cursor");
+
+            let targetX = window.innerWidth / 2;
+            let targetY = window.innerHeight / 2;
+            let x = targetX;
+            let y = targetY;
+            let frame = 0;
+            let visible = false;
+
+            const tick = () => {
+                x += (targetX - x) * 0.24;
+                y += (targetY - y) * 0.24;
+                cursor.style.transform =
+                    `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%)`;
+
+                if (Math.abs(targetX - x) > 0.1 || Math.abs(targetY - y) > 0.1) {
+                    frame = requestAnimationFrame(tick);
+                } else {
+                    frame = 0;
+                }
+            };
+
+            window.addEventListener(
+                "pointermove",
+                (event) => {
+                    targetX = event.clientX;
+                    targetY = event.clientY;
+                    if (!visible) {
+                        visible = true;
+                        cursor.classList.add("is-visible");
+                    }
+                    if (!frame) frame = requestAnimationFrame(tick);
+                },
+                { passive: true }
+            );
+
+            const interactive = "a, button, textarea, input, [role='button']";
+            document.addEventListener("pointerover", (event) => {
+                if (event.target.closest(interactive)) cursor.classList.add("is-active");
+            });
+            document.addEventListener("pointerout", (event) => {
+                if (event.target.closest(interactive)) cursor.classList.remove("is-active");
+            });
+            document.addEventListener("pointerleave", () => {
+                visible = false;
+                cursor.classList.remove("is-visible");
+            });
+            document.addEventListener("pointerenter", () => {
+                visible = true;
+                cursor.classList.add("is-visible");
+            });
+        })();
     </script>
 </body>
 </html>
