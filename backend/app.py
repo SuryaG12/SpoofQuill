@@ -1,4 +1,4 @@
-"""FastAPI app for Quyllwrit.
+"""FastAPI app for SpoofQuill.
 
 POST /analyze takes raw email text and returns the phishing score, the
 reasons behind it, and the facts the parser pulled out of the message.
@@ -21,7 +21,7 @@ except ImportError:  # pragma: no cover - script-style execution
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 app = FastAPI(
-    title="Quyllwrit",
+    title="SpoofQuill",
     description="Paste an email and get a phishing score with the reasons behind it.",
     version="0.1.0",
 )
