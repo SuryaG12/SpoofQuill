@@ -1,4 +1,4 @@
-"""Phishing scoring rules for SpoofScope.
+"""Phishing scoring rules for Quyllwrit.
 
 Takes a ParsedEmail and turns the signals we can see into a 0-100 score plus
 plain-English reasons a person can read.

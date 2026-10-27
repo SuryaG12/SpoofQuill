@@ -1,10 +1,10 @@
-# SpoofScope
+# Quyllwrit
 
-SpoofScope reads a raw email and scores how much it looks like phishing.
+Quyllwrit reads a raw email and scores how much it looks like phishing.
 
 ## What it does
 
-Paste an email, headers included, or load one of the examples. SpoofScope returns a score from 0 to 100, the reasons behind that score, and the sender facts it could pull from the message.
+Paste an email, headers included, or load one of the examples. Quyllwrit returns a score from 0 to 100, the reasons behind that score, and the sender facts it could pull from the message.
 
 Four signals add points:
 

@@ -1,4 +1,4 @@
-"""Email parsing for SpoofScope.
+"""Email parsing for Quyllwrit.
 
 Turns raw email text into the few facts the scoring rules will need:
 
