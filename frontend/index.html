@@ -5,168 +5,627 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PhishLens</title>
     <style>
+        /* Forensic instrument panel: graphite surfaces, amber signal,
+           squared geometry, monospaced telemetry, one strong gauge. */
         :root {
-            color-scheme: light;
-            --ink: #1f2933;
-            --muted: #5f6b7a;
-            --line: #d9dee5;
-            --page: #f3f5f8;
-            --card: #ffffff;
-            --accent: #1a56db;
+            color-scheme: dark;
+            --bg: #0c0f12;
+            --panel: #12171c;
+            --panel-2: #0d1116;
+            --line: #242d35;
+            --line-strong: #36424d;
+            --ink: #e4eaef;
+            --muted: #8b97a2;
+            --faint: #5a6570;
+            --accent: #f0b35a;
+            --accent-bright: #ffc978;
+            --low: #46d39a;
+            --medium: #f4b860;
+            --high: #ff6b5e;
+            --state: var(--faint);
+
+            --font-ui: "Bahnschrift", "Aptos", "Segoe UI", system-ui, sans-serif;
+            --font-mono: "Cascadia Mono", "IBM Plex Mono", Consolas, ui-monospace, monospace;
         }
         * { box-sizing: border-box; }
+        html { background: var(--bg); }
         body {
             margin: 0;
-            padding: 32px 16px;
-            background: var(--page);
+            min-height: 100vh;
+            padding: 28px 32px 40px;
+            background-color: var(--bg);
+            background-image:
+                linear-gradient(rgba(255, 255, 255, 0.022) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.022) 1px, transparent 1px);
+            background-size: 44px 44px;
             color: var(--ink);
-            font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+            font-family: var(--font-ui);
+            font-size: 15px;
             line-height: 1.5;
         }
-        main {
-            max-width: 860px;
+        .masthead {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 24px;
+            max-width: 1240px;
+            margin: 0 auto 24px;
+            padding-bottom: 18px;
+            border-bottom: 1px solid var(--line);
+        }
+        .brand { display: flex; align-items: center; gap: 14px; }
+        .mark { flex: none; width: 34px; height: 34px; }
+        h1 {
+            margin: 0;
+            font-size: 1.35rem;
+            font-weight: 650;
+            letter-spacing: 0.015em;
+            line-height: 1.1;
+        }
+        .kicker {
+            margin: 4px 0 0;
+            font-family: var(--font-mono);
+            font-size: 0.62rem;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+        .instance {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: var(--font-mono);
+            font-size: 0.62rem;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--muted);
+            white-space: nowrap;
+        }
+        .instance .live {
+            width: 6px;
+            height: 6px;
+            background: var(--low);
+            box-shadow: 0 0 0 3px rgba(70, 211, 154, 0.14);
+        }
+        .instance .sep { color: var(--faint); }
+
+        .workspace {
+            display: grid;
+            grid-template-columns: minmax(0, 1.02fr) minmax(0, 0.98fr);
+            gap: 22px;
+            align-items: start;
+            max-width: 1240px;
             margin: 0 auto;
         }
-        h1 { margin: 0 0 4px; font-size: 1.8rem; }
-        .tagline { margin: 0 0 24px; color: var(--muted); }
-        .card {
-            background: var(--card);
+        .panel {
+            position: relative;
+            background: var(--panel);
             border: 1px solid var(--line);
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 20px;
+            border-radius: 2px;
         }
-        label { display: block; font-weight: 600; margin-bottom: 8px; }
-        textarea {
-            width: 100%;
-            min-height: 220px;
-            resize: vertical;
-            padding: 12px;
-            border: 1px solid var(--line);
-            border-radius: 6px;
-            font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
-            font-size: 0.85rem;
-            color: var(--ink);
-            background: #fbfcfd;
+        .panel::before {
+            content: "";
+            position: absolute;
+            top: -1px;
+            left: -1px;
+            width: 14px;
+            height: 14px;
+            border-top: 1px solid var(--line-strong);
+            border-left: 1px solid var(--line-strong);
         }
-        textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
-        .actions {
+        .panel-head {
             display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
             align-items: center;
-            margin-top: 12px;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--line);
+        }
+        .panel-head h2 {
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+            margin: 0;
+            font-family: var(--font-mono);
+            font-size: 0.68rem;
+            font-weight: 600;
+            letter-spacing: 0.17em;
+            text-transform: uppercase;
+            color: var(--ink);
+        }
+        .index { color: var(--accent); }
+        .meta {
+            font-family: var(--font-mono);
+            font-size: 0.62rem;
+            letter-spacing: 0.08em;
+            color: var(--faint);
+            font-variant-numeric: tabular-nums;
+        }
+        .panel-body { padding: 18px; }
+
+        .field-label {
+            display: block;
+            margin-bottom: 8px;
+            font-family: var(--font-mono);
+            font-size: 0.62rem;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+        textarea {
+            display: block;
+            width: 100%;
+            min-height: 318px;
+            resize: vertical;
+            padding: 14px;
+            border: 1px solid var(--line-strong);
+            border-radius: 2px;
+            background: var(--panel-2);
+            color: var(--ink);
+            font-family: var(--font-mono);
+            font-size: 0.78rem;
+            line-height: 1.6;
+            caret-color: var(--accent);
+        }
+        textarea::placeholder { color: var(--faint); }
+        textarea:focus-visible {
+            outline: 1px solid var(--accent);
+            outline-offset: 2px;
+        }
+
+        .controls {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 16px;
+            margin-top: 16px;
+        }
+        .examples {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .control-label {
+            margin-right: 4px;
+            font-family: var(--font-mono);
+            font-size: 0.6rem;
+            letter-spacing: 0.13em;
+            text-transform: uppercase;
+            color: var(--faint);
         }
         button {
-            font: inherit;
-            padding: 9px 16px;
-            border-radius: 6px;
-            border: 1px solid var(--line);
-            background: #fff;
-            color: var(--ink);
+            font-family: var(--font-mono);
+            font-size: 0.66rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            border-radius: 2px;
             cursor: pointer;
         }
-        button:hover { border-color: #aab4c0; }
-        button:disabled { opacity: 0.55; cursor: progress; }
-        button.primary {
-            background: var(--accent);
-            border-color: var(--accent);
-            color: #fff;
-            font-weight: 600;
+        .examples button {
+            padding: 8px 11px;
+            border: 1px solid var(--line-strong);
+            background: transparent;
+            color: var(--muted);
+            transition: color 140ms ease-out, border-color 140ms ease-out, background-color 140ms ease-out;
         }
-        button.primary:hover { background: #1546b8; }
-        .spacer { flex: 1 1 auto; }
-        .hint { color: var(--muted); font-size: 0.85rem; margin: 8px 0 0; }
+        .examples button:hover {
+            color: var(--ink);
+            border-color: var(--accent);
+            background: rgba(240, 179, 90, 0.06);
+        }
+        .run {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 11px 18px;
+            border: 1px solid var(--accent);
+            background: var(--accent);
+            color: #14181c;
+            font-weight: 700;
+            transition: background-color 140ms ease-out, border-color 140ms ease-out;
+        }
+        .run:hover { background: var(--accent-bright); border-color: var(--accent-bright); }
+        .run:active { transform: translateY(1px); }
+        .run:disabled { opacity: 0.55; cursor: progress; }
+        .run .arrow { font-size: 0.9rem; line-height: 1; }
+        button:focus-visible,
+        a:focus-visible {
+            outline: 1px solid var(--accent);
+            outline-offset: 2px;
+        }
+
         .status {
-            min-height: 1.5em;
-            margin: 12px 0 0;
-            font-size: 0.9rem;
+            min-height: 1.4em;
+            margin: 14px 0 0;
+            font-family: var(--font-mono);
+            font-size: 0.68rem;
+            letter-spacing: 0.02em;
             color: var(--muted);
         }
-        .status.error { color: #b42318; }
-        .result-header {
+        .status.error { color: var(--high); }
+
+        .readout[data-state="low"] { --state: var(--low); }
+        .readout[data-state="medium"] { --state: var(--medium); }
+        .readout[data-state="high"] { --state: var(--high); }
+
+        .state-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 5px 8px;
+            border: 1px solid var(--state);
+            border-radius: 2px;
+            color: var(--state);
+            font-family: var(--font-mono);
+            font-size: 0.6rem;
+            font-weight: 600;
+            letter-spacing: 0.13em;
+            text-transform: uppercase;
+            white-space: nowrap;
+            transition: color 200ms ease-out, border-color 200ms ease-out;
+        }
+        .state-chip::before {
+            content: "";
+            width: 5px;
+            height: 5px;
+            background: currentColor;
+        }
+
+        .gauge {
+            position: relative;
+            max-width: 344px;
+            margin: 10px auto 0;
+        }
+        .gauge svg { display: block; width: 100%; height: auto; }
+        .gauge-track,
+        .gauge-fill {
+            fill: none;
+            stroke-width: 9;
+        }
+        .gauge-track { stroke: #232c34; }
+        .gauge-fill {
+            stroke: var(--state);
+            stroke-dasharray: 371;
+            stroke-dashoffset: 371;
+            transition: stroke-dashoffset 700ms cubic-bezier(0.22, 1, 0.36, 1),
+                        stroke 220ms ease-out;
+        }
+        .gauge .tick { stroke: var(--line-strong); stroke-width: 1.5; }
+        .score-readout {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 2px;
             display: flex;
-            flex-wrap: wrap;
             align-items: baseline;
-            gap: 12px;
+            justify-content: center;
+            gap: 6px;
+            font-family: var(--font-mono);
+            font-variant-numeric: tabular-nums;
         }
         .score {
-            font-size: 2.6rem;
-            font-weight: 700;
-            line-height: 1;
-        }
-        .score small { font-size: 1rem; color: var(--muted); font-weight: 500; }
-        .badge {
-            padding: 4px 10px;
-            border-radius: 999px;
-            font-size: 0.8rem;
+            font-size: clamp(3rem, 7vw, 3.9rem);
             font-weight: 600;
+            line-height: 1;
+            letter-spacing: -0.02em;
+            color: var(--state);
+            transition: color 200ms ease-out;
+        }
+        .denom { font-size: 0.75rem; color: var(--faint); }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 6px 18px;
+            margin: 16px 0 4px;
+            padding: 0;
+            list-style: none;
+            font-family: var(--font-mono);
+            font-size: 0.58rem;
+            letter-spacing: 0.09em;
             text-transform: uppercase;
+            color: var(--faint);
+        }
+        .legend li { display: flex; align-items: center; gap: 6px; }
+        .swatch { width: 5px; height: 5px; }
+        .swatch.low { background: var(--low); }
+        .swatch.medium { background: var(--medium); }
+        .swatch.high { background: var(--high); }
+
+        .block {
+            margin-top: 22px;
+            padding-top: 16px;
+            border-top: 1px solid var(--line);
+        }
+        .block-head {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .block-head h3 {
+            margin: 0;
+            font-family: var(--font-mono);
+            font-size: 0.62rem;
+            font-weight: 600;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+        .count {
+            font-family: var(--font-mono);
+            font-size: 0.6rem;
+            color: var(--faint);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .signals {
+            counter-reset: signal;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+        .signals li {
+            position: relative;
+            padding: 0 0 12px 30px;
+            font-size: 0.87rem;
+            line-height: 1.5;
+            color: var(--ink);
+        }
+        .signals li::before {
+            counter-increment: signal;
+            content: counter(signal, decimal-leading-zero);
+            position: absolute;
+            left: 0;
+            top: 1px;
+            font-family: var(--font-mono);
+            font-size: 0.6rem;
+            color: var(--accent);
             letter-spacing: 0.04em;
         }
-        .badge.low { background: #e7f6ec; color: #12633a; }
-        .badge.medium { background: #fff3d6; color: #7a4b00; }
-        .badge.high { background: #fde8e6; color: #9b1c12; }
-        h2 { font-size: 1rem; margin: 24px 0 8px; }
-        ul { margin: 0; padding-left: 20px; }
-        li { margin-bottom: 6px; }
-        dl {
+        .signals li.empty {
+            padding-left: 0;
+            color: var(--faint);
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+        }
+        .signals li.empty::before { content: none; }
+
+        .origin {
             display: grid;
-            grid-template-columns: max-content 1fr;
-            gap: 6px 16px;
+            grid-template-columns: 72px minmax(0, 1fr);
+            gap: 0;
             margin: 0;
         }
-        dt { color: var(--muted); }
-        dd { margin: 0; overflow-wrap: anywhere; }
-        .links li { margin-bottom: 10px; }
-        .link-url {
-            display: block;
-            font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
-            font-size: 0.85rem;
-            color: var(--muted);
+        .origin dt,
+        .origin dd {
+            margin: 0;
+            padding: 8px 0;
+            border-top: 1px solid var(--line);
+        }
+        .origin dt {
+            font-family: var(--font-mono);
+            font-size: 0.6rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--faint);
+        }
+        .origin dd {
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            color: var(--ink);
             overflow-wrap: anywhere;
         }
-        [hidden] { display: none !important; }
+        .origin dd.muted { color: var(--faint); }
+
+        .links {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+        .links li {
+            padding: 9px 0;
+            border-top: 1px solid var(--line);
+            overflow-wrap: anywhere;
+        }
+        .links li.empty {
+            border-top: 0;
+            padding-top: 0;
+            color: var(--faint);
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+        }
+        .links a {
+            color: var(--ink);
+            text-decoration: underline;
+            text-decoration-color: var(--line-strong);
+            text-underline-offset: 3px;
+            font-size: 0.85rem;
+        }
+        .links a:hover { text-decoration-color: var(--accent); }
+        .link-url {
+            display: block;
+            margin-top: 3px;
+            font-family: var(--font-mono);
+            font-size: 0.66rem;
+            color: var(--muted);
+        }
+        .links .external {
+            margin-left: 6px;
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            color: var(--faint);
+        }
+
+        .footer {
+            display: flex;
+            justify-content: space-between;
+            gap: 18px;
+            flex-wrap: wrap;
+            max-width: 1240px;
+            margin: 24px auto 0;
+            padding-top: 14px;
+            border-top: 1px solid var(--line);
+            font-family: var(--font-mono);
+            font-size: 0.58rem;
+            letter-spacing: 0.09em;
+            text-transform: uppercase;
+            color: var(--faint);
+        }
+
+        @media (prefers-reduced-motion: no-preference) {
+            .signals li:not(.empty) {
+                animation: signal-in 280ms cubic-bezier(0.2, 0.7, 0.3, 1) both;
+            }
+        }
+        @keyframes signal-in {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
+        @media (max-width: 980px) {
+            body { padding: 22px 20px 32px; }
+            .workspace { grid-template-columns: 1fr; }
+            .instance .sep,
+            .instance .manual { display: none; }
+        }
+        @media (max-width: 560px) {
+            body { padding: 16px 14px 28px; }
+            .masthead { flex-wrap: wrap; align-items: flex-start; gap: 12px; }
+            .instance { width: 100%; }
+            .controls { flex-direction: column; align-items: stretch; }
+            .run { justify-content: center; }
+            .gauge { max-width: 300px; }
+            .origin { grid-template-columns: 62px minmax(0, 1fr); }
+        }
     </style>
 </head>
 <body>
-    <main>
-        <h1>PhishLens</h1>
-        <p class="tagline">Paste a raw email and see how many phishing warning signs it shows.</p>
-
-        <section class="card">
-            <label for="email-input">Raw email</label>
-            <textarea id="email-input" placeholder="Paste the full email here, headers and all..."></textarea>
-            <div class="actions">
-                <button type="button" data-example="1">Load example 1</button>
-                <button type="button" data-example="2">Load example 2</button>
-                <button type="button" data-example="3">Load example 3</button>
-                <span class="spacer"></span>
-                <button type="button" id="analyze" class="primary">Analyze</button>
+    <header class="masthead">
+        <div class="brand">
+            <svg class="mark" viewBox="0 0 34 34" aria-hidden="true" fill="none">
+                <circle cx="17" cy="17" r="14.5" stroke="#f0b35a" stroke-width="1.5" />
+                <circle cx="17" cy="17" r="6" stroke="#f0b35a" stroke-width="1.5" />
+                <circle cx="17" cy="17" r="1.4" fill="#f0b35a" />
+                <path d="M17 0.8v6M17 27.2v6M0.8 17h6M27.2 17h6" stroke="#f0b35a" stroke-width="1.2" />
+            </svg>
+            <div>
+                <h1>PhishLens</h1>
+                <p class="kicker">Email threat analysis</p>
             </div>
-            <p class="status" id="status" role="status" aria-live="polite"></p>
+        </div>
+        <div class="instance">
+            <span class="live" aria-hidden="true"></span>
+            Local instance
+            <span class="sep">/</span>
+            <span class="manual">Manual review</span>
+        </div>
+    </header>
+
+    <main class="workspace">
+        <section class="panel" aria-labelledby="evidence-title">
+            <div class="panel-head">
+                <h2 id="evidence-title"><span class="index">01</span> Evidence</h2>
+                <span class="meta" id="char-count">0 chars</span>
+            </div>
+            <div class="panel-body">
+                <label class="field-label" for="email-input">Raw email</label>
+                <textarea id="email-input" spellcheck="false" placeholder="Paste the full email here, headers and all..."></textarea>
+
+                <div class="controls">
+                    <div class="examples" role="group" aria-label="Load an example email">
+                        <span class="control-label">Examples</span>
+                        <button type="button" data-example="1" aria-label="Load example 1">Ex 01</button>
+                        <button type="button" data-example="2" aria-label="Load example 2">Ex 02</button>
+                        <button type="button" data-example="3" aria-label="Load example 3">Ex 03</button>
+                    </div>
+                    <button type="button" id="analyze" class="run">
+                        <span class="run-label">Analyze</span>
+                        <span class="arrow" aria-hidden="true">→</span>
+                    </button>
+                </div>
+
+                <p class="status" id="status" role="status" aria-live="polite">Paste an email or load an example.</p>
+            </div>
         </section>
 
-        <section class="card" id="result" hidden>
-            <div class="result-header">
-                <span class="score"><span id="score">-</span><small> / 100</small></span>
-                <span class="badge" id="badge"></span>
+        <section class="panel readout" id="readout" data-state="idle" aria-labelledby="readout-title">
+            <div class="panel-head">
+                <h2 id="readout-title"><span class="index">02</span> Readout</h2>
+                <span class="state-chip" id="badge">Awaiting sample</span>
             </div>
+            <div class="panel-body">
+                <div class="gauge">
+                    <svg viewBox="0 0 280 158" role="img" aria-label="Phishing score out of 100">
+                        <path class="gauge-track" d="M 22 132 A 118 118 0 0 1 258 132" />
+                        <path class="gauge-fill" id="gauge-fill" d="M 22 132 A 118 118 0 0 1 258 132" />
+                        <g class="ticks" aria-hidden="true">
+                            <line class="tick" x1="30" y1="132" x2="22" y2="132" />
+                            <line class="tick" x1="77" y1="46" x2="70" y2="36" />
+                            <line class="tick" x1="173" y1="31" x2="177" y2="20" />
+                            <line class="tick" x1="250" y1="132" x2="258" y2="132" />
+                        </g>
+                    </svg>
+                    <div class="score-readout">
+                        <span class="score" id="score">—</span>
+                        <span class="denom">/100</span>
+                    </div>
+                </div>
 
-            <h2>Why</h2>
-            <ul id="reasons"></ul>
+                <ul class="legend" aria-label="Score ranges">
+                    <li><span class="swatch low"></span>0–29 Low</li>
+                    <li><span class="swatch medium"></span>30–59 Suspicious</li>
+                    <li><span class="swatch high"></span>60–100 High</li>
+                </ul>
 
-            <h2>Sender</h2>
-            <dl>
-                <dt>From</dt><dd id="sender"></dd>
-                <dt>Domain</dt><dd id="sender-domain"></dd>
-                <dt>Reply-to</dt><dd id="reply-to"></dd>
-            </dl>
+                <section class="block" aria-labelledby="signals-title">
+                    <div class="block-head">
+                        <h3 id="signals-title">Signals</h3>
+                        <span class="count" id="reason-count">0</span>
+                    </div>
+                    <ol class="signals" id="reasons">
+                        <li class="empty">No analysis yet. Load an example to begin.</li>
+                    </ol>
+                </section>
 
-            <h2>Links</h2>
-            <ul class="links" id="links"></ul>
+                <section class="block" aria-labelledby="origin-title">
+                    <div class="block-head">
+                        <h3 id="origin-title">Origin</h3>
+                    </div>
+                    <dl class="origin">
+                        <dt>From</dt><dd class="muted" id="sender">—</dd>
+                        <dt>Domain</dt><dd class="muted" id="sender-domain">—</dd>
+                        <dt>Reply-to</dt><dd class="muted" id="reply-to">—</dd>
+                    </dl>
+                </section>
+
+                <section class="block" aria-labelledby="links-title">
+                    <div class="block-head">
+                        <h3 id="links-title">Links</h3>
+                        <span class="count" id="link-count">0</span>
+                    </div>
+                    <ul class="links" id="links">
+                        <li class="empty">—</li>
+                    </ul>
+                </section>
+            </div>
         </section>
     </main>
+
+    <footer class="footer">
+        <span>PhishLens · Local instance</span>
+        <span>Signals: reply-to · link target · urgency · payment/login</span>
+    </footer>
 
     <script>
         const EXAMPLES = {
@@ -178,7 +637,16 @@
         const input = document.getElementById("email-input");
         const analyzeButton = document.getElementById("analyze");
         const status = document.getElementById("status");
-        const result = document.getElementById("result");
+        const readout = document.getElementById("readout");
+        const badge = document.getElementById("badge");
+        const score = document.getElementById("score");
+        const gaugeFill = document.getElementById("gauge-fill");
+        const reasonCount = document.getElementById("reason-count");
+        const linkCount = document.getElementById("link-count");
+        const charCount = document.getElementById("char-count");
+
+        const gaugeLength = gaugeFill.getTotalLength();
+        gaugeFill.style.strokeDasharray = `${gaugeLength}`;
 
         function setStatus(message, isError = false) {
             status.textContent = message;
@@ -187,49 +655,87 @@
 
         function setBusy(busy) {
             analyzeButton.disabled = busy;
-            analyzeButton.textContent = busy ? "Analyzing..." : "Analyze";
+            analyzeButton.querySelector(".run-label").textContent = busy ? "Analyzing" : "Analyze";
         }
 
-        function text(value) {
+        function show(value) {
             if (value === null || value === undefined || value === "") return "—";
             return String(value);
         }
 
-        function riskLabel(score) {
-            if (score >= 60) return { label: "High risk", className: "high" };
-            if (score >= 30) return { label: "Suspicious", className: "medium" };
-            return { label: "Low risk", className: "low" };
+        function riskState(value) {
+            if (value >= 60) return { state: "high", label: "High risk" };
+            if (value >= 30) return { state: "medium", label: "Suspicious" };
+            return { state: "low", label: "Low risk" };
         }
 
-        function render(data) {
-            document.getElementById("score").textContent = data.score;
+        function setOrigin(id, value) {
+            const node = document.getElementById(id);
+            node.textContent = show(value);
+            node.classList.toggle("muted", node.textContent === "—");
+        }
 
-            const risk = riskLabel(data.score);
-            const badge = document.getElementById("badge");
-            badge.textContent = risk.label;
-            badge.className = `badge ${risk.className}`;
+        function resetReadout() {
+            readout.dataset.state = "idle";
+            badge.textContent = "Awaiting sample";
+            score.textContent = "—";
+            gaugeFill.style.strokeDashoffset = `${gaugeLength}`;
+            reasonCount.textContent = "0";
+            linkCount.textContent = "0";
 
             const reasons = document.getElementById("reasons");
             reasons.replaceChildren();
-            if (!data.reasons.length) {
-                const item = document.createElement("li");
-                item.textContent = "No warning signs found.";
-                reasons.append(item);
-            }
-            for (const reason of data.reasons) {
-                const item = document.createElement("li");
-                item.textContent = reason;
-                reasons.append(item);
-            }
+            const reasonItem = document.createElement("li");
+            reasonItem.className = "empty";
+            reasonItem.textContent = "No analysis yet. Load an example to begin.";
+            reasons.append(reasonItem);
 
-            document.getElementById("sender").textContent = text(data.sender);
-            document.getElementById("sender-domain").textContent = text(data.sender_domain);
-            document.getElementById("reply-to").textContent = text(data.reply_to);
+            setOrigin("sender", null);
+            setOrigin("sender-domain", null);
+            setOrigin("reply-to", null);
 
             const links = document.getElementById("links");
             links.replaceChildren();
+            const linkItem = document.createElement("li");
+            linkItem.className = "empty";
+            linkItem.textContent = "—";
+            links.append(linkItem);
+        }
+
+        function render(data) {
+            const risk = riskState(data.score);
+            readout.dataset.state = risk.state;
+            badge.textContent = risk.label;
+            score.textContent = data.score;
+            gaugeFill.style.strokeDashoffset =
+                `${gaugeLength * (1 - Math.max(0, Math.min(100, data.score)) / 100)}`;
+
+            const reasons = document.getElementById("reasons");
+            reasons.replaceChildren();
+            reasonCount.textContent = String(data.reasons.length);
+            if (!data.reasons.length) {
+                const item = document.createElement("li");
+                item.className = "empty";
+                item.textContent = "No warning signs found.";
+                reasons.append(item);
+            }
+            data.reasons.forEach((reason, index) => {
+                const item = document.createElement("li");
+                item.textContent = reason;
+                item.style.animationDelay = `${index * 45}ms`;
+                reasons.append(item);
+            });
+
+            setOrigin("sender", data.sender);
+            setOrigin("sender-domain", data.sender_domain);
+            setOrigin("reply-to", data.reply_to);
+
+            const links = document.getElementById("links");
+            links.replaceChildren();
+            linkCount.textContent = String(data.links.length);
             if (!data.links.length) {
                 const item = document.createElement("li");
+                item.className = "empty";
                 item.textContent = "No links found.";
                 links.append(item);
             }
@@ -240,8 +746,12 @@
                 anchor.textContent = link.text || link.url;
                 anchor.target = "_blank";
                 anchor.rel = "noopener noreferrer";
+                const external = document.createElement("span");
+                external.className = "external";
+                external.setAttribute("aria-hidden", "true");
+                external.textContent = "↗";
+                anchor.append(external);
                 item.append(anchor);
-                // Show the real target too when the visible text is something else.
                 if (link.text && link.text !== link.url) {
                     const url = document.createElement("span");
                     url.className = "link-url";
@@ -250,9 +760,6 @@
                 }
                 links.append(item);
             }
-
-            result.hidden = false;
-            result.scrollIntoView({ behavior: "smooth", block: "start" });
         }
 
         async function loadExample(number) {
@@ -261,8 +768,10 @@
                 const response = await fetch(EXAMPLES[number]);
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 input.value = await response.text();
-                result.hidden = true;
-                setStatus(`Loaded example ${number}. Click Analyze.`);
+                input.scrollTop = 0;
+                charCount.textContent = `${input.value.length.toLocaleString()} chars`;
+                resetReadout();
+                setStatus(`Example ${number} loaded. Ready to analyze.`);
             } catch (error) {
                 setStatus(
                     `Could not load example ${number} (${error.message}). ` +
@@ -301,7 +810,7 @@
 
                 const data = await response.json();
                 render(data);
-                setStatus(`Scored ${data.score}/100.`);
+                setStatus(`Analysis complete — score ${data.score}/100.`);
             } catch (error) {
                 setStatus(
                     `Analysis failed (${error.message}). ` +
@@ -313,6 +822,9 @@
             }
         }
 
+        input.addEventListener("input", () => {
+            charCount.textContent = `${input.value.length.toLocaleString()} chars`;
+        });
         for (const button of document.querySelectorAll("[data-example]")) {
             button.addEventListener("click", () => loadExample(button.dataset.example));
         }
