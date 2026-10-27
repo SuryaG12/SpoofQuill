@@ -512,21 +512,44 @@
             color: var(--muted);
         }
         .score-bar {
-            height: 2px;
+            position: relative;
+            height: 3px;
             margin-top: clamp(2.25rem, 5vw, 3.5rem);
-            background: var(--line);
-            overflow: hidden;
+            background: #2b2b2b;
+        }
+        /* Halfway tick, so the scale is easy to read against the score. */
+        .score-bar::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 50%;
+            width: 1px;
+            background: rgba(242, 240, 235, 0.28);
+            pointer-events: none;
         }
         #score-fill {
+            position: relative;
+            z-index: 1;
             display: block;
-            width: 100%;
+            width: 0%;
             height: 100%;
             background: var(--state);
-            transform: scaleX(0);
-            transform-origin: left center;
-            transition:
-                transform 0.9s var(--ease-out),
-                background-color 0.4s var(--ease-ui);
+            transition: background-color 0.4s var(--ease-ui);
+        }
+        #score-fill::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            right: 0;
+            width: 2px;
+            height: 13px;
+            background: var(--ink);
+            transform: translate(50%, -50%);
+            transition: opacity 0.3s var(--ease-ui);
+        }
+        #readout[data-state="idle"] #score-fill::after {
+            opacity: 0;
         }
 
         .result-grid {
@@ -1224,7 +1247,7 @@
             setState("idle", "Awaiting sample", "Paste a message to read its score.");
             score.textContent = "·";
             score.setAttribute("aria-label", "Phishing risk score");
-            scoreFill.style.transform = "scaleX(0)";
+            scoreFill.style.width = "0%";
             reasonCount.textContent = "0";
             linkCount.textContent = "0";
 
@@ -1254,7 +1277,7 @@
             setState(state, risk.label, risk.caption);
             score.textContent = String(data.score);
             score.setAttribute("aria-label", `Phishing risk score ${data.score} out of 100`);
-            scoreFill.style.transform = `scaleX(${Math.max(0, Math.min(100, data.score)) / 100})`;
+            scoreFill.style.width = `${Math.max(0, Math.min(100, data.score))}%`;
 
             const reasons = document.getElementById("reasons");
             reasons.replaceChildren();
