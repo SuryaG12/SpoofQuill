@@ -233,16 +233,26 @@
 
         /* Chapters */
         .workspace,
-        .result,
-        .method {
+        .closing {
             position: relative;
             z-index: 2;
             padding-top: clamp(2rem, 4vw, 3.25rem);
             border-top: 1px solid var(--line);
         }
-        .workspace,
-        .result {
+        .workspace {
             padding-bottom: clamp(5rem, 12vw, 10rem);
+        }
+        .closing {
+            display: grid;
+            grid-template-columns: minmax(0, 1.8fr) minmax(19rem, 0.9fr);
+            gap: clamp(2rem, 5vw, 4.5rem);
+            align-items: start;
+            padding-bottom: clamp(5rem, 12vw, 10rem);
+        }
+        .result,
+        .method {
+            position: relative;
+            z-index: 2;
         }
         .section-head {
             display: grid;
@@ -312,9 +322,8 @@
             width: 100%;
             min-height: clamp(17rem, 31vw, 23rem);
             margin: 0;
-            padding: 0 0 1.25rem;
-            border: 0;
-            border-bottom: 1px solid var(--line);
+            padding: clamp(0.85rem, 1.3vw, 1.05rem) clamp(0.9rem, 1.4vw, 1.15rem);
+            border: 1px solid var(--ink);
             border-radius: 0;
             background: transparent;
             color: var(--ink);
@@ -323,7 +332,7 @@
             line-height: 1.75;
             caret-color: var(--ink);
             resize: vertical;
-            transition: border-color 0.4s var(--ease-ui);
+            transition: border-color 0.4s var(--ease-ui), background-color 0.4s var(--ease-ui);
         }
         textarea::placeholder {
             color: var(--faint);
@@ -331,7 +340,8 @@
         }
         textarea:focus {
             outline: none;
-            border-bottom-color: var(--ink);
+            border-color: var(--ink);
+            background: rgba(242, 240, 235, 0.03);
         }
 
         .examples {
@@ -383,7 +393,7 @@
             justify-content: space-between;
             gap: 2rem;
             width: 100%;
-            margin-top: clamp(2.5rem, 5vw, 4rem);
+            margin-top: clamp(1.25rem, 2.5vw, 2rem);
             padding: clamp(1.1rem, 2.2vw, 1.7rem) 0;
             border: 0;
             border-top: 1px solid var(--line);
@@ -641,9 +651,6 @@
         }
 
         /* Method */
-        .method {
-            padding-bottom: clamp(5rem, 12vw, 10rem);
-        }
         .method-intro {
             max-width: 56ch;
             margin: 0 0 clamp(2.5rem, 5vw, 4rem);
@@ -816,6 +823,39 @@
         }
 
         /* Responsive */
+        @media (min-width: 1100px) {
+            .closing .method .section-head {
+                grid-template-columns: 2rem minmax(0, 1fr);
+                row-gap: 0.4rem;
+            }
+            .closing .method .section-meta {
+                grid-column: 2;
+                text-align: left;
+            }
+            .closing .band {
+                grid-template-columns: 1fr auto;
+                row-gap: 0.8rem;
+            }
+            .closing .band p {
+                grid-column: 1 / -1;
+                max-width: none;
+            }
+        }
+
+        @media (max-width: 1099px) {
+            .closing {
+                grid-template-columns: 1fr;
+                gap: 0;
+            }
+            .closing .result {
+                padding-bottom: clamp(5rem, 12vw, 10rem);
+            }
+            .closing .method {
+                padding-top: clamp(2rem, 4vw, 3.25rem);
+                border-top: 1px solid var(--line);
+            }
+        }
+
         @media (max-width: 900px) {
             .field-grid {
                 grid-template-columns: 1fr;
@@ -991,106 +1031,108 @@
             <p class="status" id="status" role="status" aria-live="polite">Paste an email or load an example.</p>
         </section>
 
-        <section class="result shell" id="readout" data-state="idle" aria-labelledby="result-title">
-            <div class="section-head">
-                <span class="section-index">02</span>
-                <h2 id="result-title">Result</h2>
-                <span class="section-meta">Score out of 100</span>
-            </div>
-
-            <div class="score-area">
-                <div class="score-main">
-                    <span id="score" aria-label="Phishing risk score">·</span>
-                    <span class="score-of">/100</span>
+        <div class="closing shell">
+            <section class="result" id="readout" data-state="idle" aria-labelledby="result-title">
+                <div class="section-head">
+                    <span class="section-index">02</span>
+                    <h2 id="result-title">Result</h2>
+                    <span class="section-meta">Score out of 100</span>
                 </div>
-                <div class="score-side">
-                    <span class="state" id="badge" data-state="idle">
-                        <span class="state-dot" aria-hidden="true"></span>
-                        <span id="state-label">Awaiting sample</span>
-                    </span>
-                    <p id="score-caption">Paste a message to read its score.</p>
-                </div>
-            </div>
 
-            <div class="score-bar" aria-hidden="true">
-                <span id="score-fill"></span>
-            </div>
-
-            <div class="result-grid">
-                <section aria-labelledby="reasons-title">
-                    <div class="block-head">
-                        <h3 id="reasons-title">Reasons</h3>
-                        <span id="reason-count">0</span>
+                <div class="score-area">
+                    <div class="score-main">
+                        <span id="score" aria-label="Phishing risk score">·</span>
+                        <span class="score-of">/100</span>
                     </div>
-                    <ol id="reasons">
-                        <li class="empty">No analysis yet. Load an example to start.</li>
-                    </ol>
-                </section>
-
-                <section class="sender" aria-labelledby="sender-title">
-                    <div class="block-head">
-                        <h3 id="sender-title">Sender</h3>
+                    <div class="score-side">
+                        <span class="state" id="badge" data-state="idle">
+                            <span class="state-dot" aria-hidden="true"></span>
+                            <span id="state-label">Awaiting sample</span>
+                        </span>
+                        <p id="score-caption">Paste a message to read its score.</p>
                     </div>
-                    <dl>
-                        <div class="sender-row">
-                            <dt>From</dt>
-                            <dd id="sender" class="is-muted">None</dd>
-                        </div>
-                        <div class="sender-row">
-                            <dt>Domain</dt>
-                            <dd id="sender-domain" class="is-muted">None</dd>
-                        </div>
-                        <div class="sender-row">
-                            <dt>Reply-to</dt>
-                            <dd id="reply-to" class="is-muted">None</dd>
-                        </div>
-                    </dl>
-                </section>
-            </div>
-
-            <section class="links-block" aria-labelledby="links-title">
-                <div class="block-head">
-                    <h3 id="links-title">Links</h3>
-                    <span id="link-count">0</span>
                 </div>
-                <ul id="links">
-                    <li class="empty">No links yet.</li>
-                </ul>
+
+                <div class="score-bar" aria-hidden="true">
+                    <span id="score-fill"></span>
+                </div>
+
+                <div class="result-grid">
+                    <section aria-labelledby="reasons-title">
+                        <div class="block-head">
+                            <h3 id="reasons-title">Reasons</h3>
+                            <span id="reason-count">0</span>
+                        </div>
+                        <ol id="reasons">
+                            <li class="empty">No analysis yet. Load an example to start.</li>
+                        </ol>
+                    </section>
+
+                    <section class="sender" aria-labelledby="sender-title">
+                        <div class="block-head">
+                            <h3 id="sender-title">Sender</h3>
+                        </div>
+                        <dl>
+                            <div class="sender-row">
+                                <dt>From</dt>
+                                <dd id="sender" class="is-muted">None</dd>
+                            </div>
+                            <div class="sender-row">
+                                <dt>Domain</dt>
+                                <dd id="sender-domain" class="is-muted">None</dd>
+                            </div>
+                            <div class="sender-row">
+                                <dt>Reply-to</dt>
+                                <dd id="reply-to" class="is-muted">None</dd>
+                            </div>
+                        </dl>
+                    </section>
+                </div>
+
+                <section class="links-block" aria-labelledby="links-title">
+                    <div class="block-head">
+                        <h3 id="links-title">Links</h3>
+                        <span id="link-count">0</span>
+                    </div>
+                    <ul id="links">
+                        <li class="empty">No links yet.</li>
+                    </ul>
+                </section>
             </section>
-        </section>
 
-        <section class="method shell" id="method" aria-labelledby="method-title">
-            <div class="section-head">
-                <span class="section-index">03</span>
-                <h2 id="method-title">Method</h2>
-                <span class="section-meta">How to read the number</span>
-            </div>
+            <section class="method" id="method" aria-labelledby="method-title">
+                <div class="section-head">
+                    <span class="section-index">03</span>
+                    <h2 id="method-title">Method</h2>
+                    <span class="section-meta">How to read the number</span>
+                </div>
 
-            <p class="method-intro">
-                Four signals add points: a reply-to that does not match the sender, link text that hides where it
-                goes, urgent language, and a link that asks for payment or a login. When several of these appear in
-                one message, a stacking bonus adds more points. Unrelated signs together are stronger evidence than
-                any one alone.
-            </p>
+                <p class="method-intro">
+                    Four signals add points: a reply-to that does not match the sender, link text that hides where it
+                    goes, urgent language, and a link that asks for payment or a login. When several of these appear in
+                    one message, a stacking bonus adds more points. Unrelated signs together are stronger evidence than
+                    any one alone.
+                </p>
 
-            <div class="bands">
-                <div class="band" data-state="low">
-                    <span class="band-name">Low</span>
-                    <span class="band-range">00 to 29</span>
-                    <p>The message shows little or no evidence of phishing. Check unusual requests through a channel you already trust.</p>
+                <div class="bands">
+                    <div class="band" data-state="low">
+                        <span class="band-name">Low</span>
+                        <span class="band-range">00 to 29</span>
+                        <p>The message shows little or no evidence of phishing. Check unusual requests through a channel you already trust.</p>
+                    </div>
+                    <div class="band" data-state="medium">
+                        <span class="band-name">Suspicious</span>
+                        <span class="band-range">30 to 59</span>
+                        <p>The message has one or more real warning signs. Confirm the sender before you reply, pay, or sign in.</p>
+                    </div>
+                    <div class="band" data-state="high">
+                        <span class="band-name">High</span>
+                        <span class="band-range">60 to 100</span>
+                        <p>Several signals point the same way. Treat the message as hostile and do not use its links.</p>
+                    </div>
                 </div>
-                <div class="band" data-state="medium">
-                    <span class="band-name">Suspicious</span>
-                    <span class="band-range">30 to 59</span>
-                    <p>The message has one or more real warning signs. Confirm the sender before you reply, pay, or sign in.</p>
-                </div>
-                <div class="band" data-state="high">
-                    <span class="band-name">High</span>
-                    <span class="band-range">60 to 100</span>
-                    <p>Several signals point the same way. Treat the message as hostile and do not use its links.</p>
-                </div>
-            </div>
-        </section>
+            </section>
+        </div>
     </main>
 
     <footer class="footer">
@@ -1274,7 +1316,6 @@
             });
 
             restartResultAnimation();
-            setStatus(`Analysis complete. Score ${data.score}/100.`);
         }
 
         async function loadExample(number) {
@@ -1294,6 +1335,14 @@
                     true
                 );
             }
+        }
+
+        function scrollToReadout() {
+            const readout = document.getElementById("readout");
+            if (!readout) return;
+            const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+            const top = Math.max(readout.getBoundingClientRect().top + window.scrollY - 24, 0);
+            window.scrollTo({ top, behavior: reducedMotion ? "auto" : "smooth" });
         }
 
         async function analyze() {
@@ -1325,6 +1374,8 @@
 
                 const data = await response.json();
                 render(data);
+                setStatus("");
+                scrollToReadout();
             } catch (error) {
                 setStatus(
                     `Analysis failed (${error.message}). ` +

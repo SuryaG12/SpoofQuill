@@ -1,4 +1,4 @@
-"""Email parsing for PhishLens.
+"""Email parsing for SpoofScope.
 
 Turns raw email text into the few facts the scoring rules will need:
 
