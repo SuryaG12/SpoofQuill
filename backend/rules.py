@@ -15,9 +15,8 @@ the rules that fire, plus a bonus once two or more independent rules fire,
 because several unrelated warning signs together are much stronger evidence
 than any one of them.
 
-The parser does not keep the subject or body yet, so both are accepted as
-optional arguments to evaluate(). Callers that have the raw email can pass
-them in; everything else works from ParsedEmail alone.
+The score is built from the subject, body, sender and links that ParsedEmail
+already carries, so evaluate() needs nothing but the parsed email.
 """
 
 from __future__ import annotations
@@ -69,7 +68,7 @@ class RuleResult:
         return {"score": self.score, "reasons": self.reasons}
 
 
-def evaluate(parsed: ParsedEmail, subject: str = "", body: str = "") -> RuleResult:
+def evaluate(parsed: ParsedEmail) -> RuleResult:
     """Score a parsed email. Higher means more phishing signals."""
     reasons: list[str] = []
     points = 0
@@ -87,7 +86,7 @@ def evaluate(parsed: ParsedEmail, subject: str = "", body: str = "") -> RuleResu
         rules_fired += 1
         reasons.extend(mismatch_reasons)
 
-    urgency_points, urgency_reasons = _check_urgency(subject, body)
+    urgency_points, urgency_reasons = _check_urgency(parsed.subject, parsed.body)
     if urgency_reasons:
         points += urgency_points
         rules_fired += 1
@@ -239,17 +238,7 @@ def _demo() -> None:
     root = Path(__file__).resolve().parent.parent
     for path in sorted((root / "examples").glob("*.txt")):
         raw = path.read_text(encoding="utf-8")
-        head, _, body = raw.partition("\n\n")
-        subject = next(
-            (
-                line.split(":", 1)[1].strip()
-                for line in head.splitlines()
-                if line.lower().startswith("subject:")
-            ),
-            "",
-        )
-
-        result = evaluate(parse_email(raw), subject=subject, body=body)
+        result = evaluate(parse_email(raw))
         print(f"\n{path.name}: score {result.score}/100")
         for reason in result.reasons:
             print(f"  - {reason}")
@@ -266,8 +255,7 @@ def _demo() -> None:
         '<p>Act now: <a href="http://login-verify.example/session">'
         "https://www.paypal.com/signin</a></p>"
     )
-    _, _, body = sample.partition("\n\n")
-    result = evaluate(parse_email(sample), subject="Urgent: your account is suspended", body=body)
+    result = evaluate(parse_email(sample))
     print(f"  score {result.score}/100")
     for reason in result.reasons:
         print(f"  - {reason}")

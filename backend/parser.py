@@ -3,6 +3,7 @@
 Turns raw email text into the few facts the scoring rules will need:
 
 * who sent it, and the domain that address belongs to
+* the subject line and the readable body
 * a reply-to address, but only when it actually differs from the sender
 * every link, keeping the text the reader sees next to the URL it really
   points at (that mismatch is the interesting part for phishing)
@@ -32,6 +33,7 @@ TAG_RE = re.compile(r"<[^>]+>")
 URL_RE = re.compile(r"https?://[^\s<>\"'`]+", re.IGNORECASE)
 TRAILING_PUNCT = ".,;:!?)"
 FROM_LINE_RE = re.compile(r"^\s*(from|reply-to)\s*:\s*(.+?)\s*$", re.IGNORECASE | re.MULTILINE)
+SUBJECT_LINE_RE = re.compile(r"^\s*subject\s*:\s*(.+?)\s*$", re.IGNORECASE | re.MULTILINE)
 EMAIL_RE = re.compile(r"[^@\s<>]+@[^@\s<>]+\.[A-Za-z]{2,}")
 
 
@@ -48,6 +50,8 @@ class ParsedEmail:
     sender: str | None = None
     sender_domain: str | None = None
     reply_to: str | None = None
+    subject: str = ""
+    body: str = ""
     links: list[Link] = field(default_factory=list)
 
     def to_dict(self) -> dict:
@@ -55,12 +59,14 @@ class ParsedEmail:
             "sender": self.sender,
             "sender_domain": self.sender_domain,
             "reply_to": self.reply_to,
+            "subject": self.subject,
+            "body": self.body,
             "links": [{"text": link.text, "url": link.url} for link in self.links],
         }
 
 
 def parse_email(raw: str) -> ParsedEmail:
-    """Parse raw email text into sender, domain, reply-to and links."""
+    """Parse raw email text into subject, body, sender, domain, reply-to and links."""
     message = message_from_string(raw, policy=policy.default)
     body_text = _body_text(message)
 
@@ -75,6 +81,8 @@ def parse_email(raw: str) -> ParsedEmail:
         sender=sender,
         sender_domain=_domain(sender),
         reply_to=reply_to,
+        subject=_subject(message, body_text),
+        body=body_text,
         links=_extract_links(body_text),
     )
 
@@ -99,6 +107,17 @@ def _address_from_body(body: str, header: str) -> str | None:
         if match.group(1).lower() == header:
             return _address(match.group(2))
     return None
+
+
+def _subject(message: Message, body: str) -> str:
+    """Use the Subject header, or a 'Subject:' line when a bare body was pasted."""
+    value = message.get("Subject")
+    if value is not None:
+        subject = " ".join(str(value).split())
+        if subject:
+            return subject
+    match = SUBJECT_LINE_RE.search(body)
+    return " ".join(match.group(1).split()) if match else ""
 
 
 def _domain(address: str | None) -> str | None:
