@@ -4,141 +4,142 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PhishLens</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
-        /* Forensic instrument panel: graphite surfaces, amber signal,
-           squared geometry, monospaced telemetry, one strong gauge. */
         :root {
             color-scheme: dark;
-            --bg: #0c0f12;
-            --panel: #12171c;
-            --panel-2: #0d1116;
-            --line: #242d35;
-            --line-strong: #36424d;
-            --ink: #e4eaef;
-            --muted: #8b97a2;
-            --faint: #5a6570;
-            --accent: #f0b35a;
-            --accent-bright: #ffc978;
-            --low: #46d39a;
-            --medium: #f4b860;
-            --high: #ff6b5e;
-            --state: var(--faint);
+            --bg: #0A0F1A;
+            --surface: #121A2B;
+            --surface-head: #0F1726;
+            --line: #1D2A3F;
+            --line-strong: #2A3A54;
+            --text: #E6EDF3;
+            --muted: #8B98AD;
+            --accent: #38BDF8;
+            --accent-strong: #7DD3FC;
+            --low: #34D399;
+            --medium: #FBBF24;
+            --high: #F87171;
+            --state: var(--muted);
 
-            --font-ui: "Bahnschrift", "Aptos", "Segoe UI", system-ui, sans-serif;
-            --font-mono: "Cascadia Mono", "IBM Plex Mono", Consolas, ui-monospace, monospace;
+            --font-ui: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+            --font-mono: "JetBrains Mono", "Cascadia Mono", Consolas, ui-monospace, monospace;
         }
         * { box-sizing: border-box; }
         html { background: var(--bg); }
         body {
             margin: 0;
             min-height: 100vh;
-            padding: 28px 32px 40px;
+            padding: 24px 32px 36px;
             background-color: var(--bg);
             background-image:
-                linear-gradient(rgba(255, 255, 255, 0.022) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255, 255, 255, 0.022) 1px, transparent 1px);
-            background-size: 44px 44px;
-            color: var(--ink);
+                linear-gradient(rgba(139, 152, 173, 0.045) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(139, 152, 173, 0.045) 1px, transparent 1px);
+            background-size: 48px 48px;
+            color: var(--text);
             font-family: var(--font-ui);
             font-size: 15px;
             line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
         }
-        .masthead {
+
+        .topbar {
             display: flex;
-            align-items: flex-end;
+            align-items: center;
             justify-content: space-between;
-            gap: 24px;
-            max-width: 1240px;
-            margin: 0 auto 24px;
+            gap: 20px;
+            max-width: 1180px;
+            margin: 0 auto 22px;
             padding-bottom: 18px;
             border-bottom: 1px solid var(--line);
         }
-        .brand { display: flex; align-items: center; gap: 14px; }
-        .mark { flex: none; width: 34px; height: 34px; }
-        h1 {
-            margin: 0;
-            font-size: 1.35rem;
-            font-weight: 650;
-            letter-spacing: 0.015em;
-            line-height: 1.1;
+        .brand { display: flex; align-items: center; gap: 11px; }
+        .brand-mark {
+            display: grid;
+            place-items: center;
+            width: 38px;
+            height: 38px;
+            border: 1px solid var(--line-strong);
+            border-radius: 7px;
+            background: var(--surface);
+            color: var(--accent);
         }
-        .kicker {
-            margin: 4px 0 0;
-            font-family: var(--font-mono);
-            font-size: 0.62rem;
-            letter-spacing: 0.18em;
+        .brand-mark svg { width: 21px; height: 21px; }
+        .brand-name {
+            display: block;
+            font-size: 1.08rem;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            line-height: 1.15;
+        }
+        .brand-sub {
+            display: block;
+            margin-top: 2px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            letter-spacing: 0.06em;
             text-transform: uppercase;
             color: var(--muted);
         }
-        .instance {
+        .topbar-meta {
             display: flex;
             align-items: center;
-            gap: 8px;
-            font-family: var(--font-mono);
-            font-size: 0.62rem;
-            letter-spacing: 0.14em;
-            text-transform: uppercase;
+            gap: 9px;
+            font-size: 0.72rem;
+            font-weight: 500;
             color: var(--muted);
             white-space: nowrap;
         }
-        .instance .live {
-            width: 6px;
-            height: 6px;
+        .live-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
             background: var(--low);
-            box-shadow: 0 0 0 3px rgba(70, 211, 154, 0.14);
+            box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.12);
         }
-        .instance .sep { color: var(--faint); }
+        .meta-sep { width: 1px; height: 12px; background: var(--line-strong); }
+        .version { font-variant-numeric: tabular-nums; }
 
-        .workspace {
+        .layout {
             display: grid;
-            grid-template-columns: minmax(0, 1.02fr) minmax(0, 0.98fr);
-            gap: 22px;
+            grid-template-columns: minmax(0, 1.03fr) minmax(0, 0.97fr);
+            gap: 20px;
             align-items: start;
-            max-width: 1240px;
+            max-width: 1180px;
             margin: 0 auto;
         }
+
         .panel {
-            position: relative;
-            background: var(--panel);
+            background: var(--surface);
             border: 1px solid var(--line);
-            border-radius: 2px;
-        }
-        .panel::before {
-            content: "";
-            position: absolute;
-            top: -1px;
-            left: -1px;
-            width: 14px;
-            height: 14px;
-            border-top: 1px solid var(--line-strong);
-            border-left: 1px solid var(--line-strong);
+            border-radius: 8px;
+            overflow: hidden;
         }
         .panel-head {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 12px;
-            padding: 12px 16px;
+            gap: 14px;
+            padding: 13px 18px;
             border-bottom: 1px solid var(--line);
+            background: var(--surface-head);
         }
         .panel-head h2 {
             display: flex;
-            align-items: baseline;
-            gap: 10px;
+            align-items: center;
+            gap: 9px;
             margin: 0;
-            font-family: var(--font-mono);
-            font-size: 0.68rem;
+            font-size: 0.82rem;
             font-weight: 600;
-            letter-spacing: 0.17em;
-            text-transform: uppercase;
-            color: var(--ink);
+            letter-spacing: 0.01em;
         }
-        .index { color: var(--accent); }
-        .meta {
-            font-family: var(--font-mono);
-            font-size: 0.62rem;
-            letter-spacing: 0.08em;
-            color: var(--faint);
+        .icon { width: 16px; height: 16px; flex: none; color: var(--accent); }
+        .panel-meta {
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: var(--muted);
             font-variant-numeric: tabular-nums;
         }
         .panel-body { padding: 18px; }
@@ -146,31 +147,32 @@
         .field-label {
             display: block;
             margin-bottom: 8px;
-            font-family: var(--font-mono);
-            font-size: 0.62rem;
-            letter-spacing: 0.14em;
+            font-size: 0.68rem;
+            font-weight: 600;
+            letter-spacing: 0.08em;
             text-transform: uppercase;
             color: var(--muted);
         }
         textarea {
             display: block;
             width: 100%;
-            min-height: 318px;
+            min-height: 336px;
             resize: vertical;
             padding: 14px;
             border: 1px solid var(--line-strong);
-            border-radius: 2px;
-            background: var(--panel-2);
-            color: var(--ink);
+            border-radius: 6px;
+            background: var(--bg);
+            color: var(--text);
             font-family: var(--font-mono);
-            font-size: 0.78rem;
-            line-height: 1.6;
+            font-size: 0.79rem;
+            line-height: 1.65;
             caret-color: var(--accent);
         }
-        textarea::placeholder { color: var(--faint); }
+        textarea::placeholder { color: #5E6C82; }
         textarea:focus-visible {
-            outline: 1px solid var(--accent);
-            outline-offset: 2px;
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.12);
         }
 
         .controls {
@@ -183,64 +185,66 @@
         .examples {
             display: flex;
             align-items: center;
-            gap: 6px;
             flex-wrap: wrap;
+            gap: 6px;
         }
         .control-label {
-            margin-right: 4px;
-            font-family: var(--font-mono);
-            font-size: 0.6rem;
-            letter-spacing: 0.13em;
-            text-transform: uppercase;
-            color: var(--faint);
-        }
-        button {
-            font-family: var(--font-mono);
-            font-size: 0.66rem;
+            margin-right: 3px;
+            font-size: 0.68rem;
+            font-weight: 600;
             letter-spacing: 0.08em;
             text-transform: uppercase;
-            border-radius: 2px;
+            color: var(--muted);
+        }
+        button {
+            font-family: var(--font-ui);
             cursor: pointer;
         }
         .examples button {
-            padding: 8px 11px;
+            height: 34px;
+            padding: 0 11px;
             border: 1px solid var(--line-strong);
+            border-radius: 5px;
             background: transparent;
             color: var(--muted);
-            transition: color 140ms ease-out, border-color 140ms ease-out, background-color 140ms ease-out;
+            font-size: 0.74rem;
+            font-weight: 500;
+            transition: color 150ms ease-out, border-color 150ms ease-out, background-color 150ms ease-out;
         }
         .examples button:hover {
-            color: var(--ink);
-            border-color: var(--accent);
-            background: rgba(240, 179, 90, 0.06);
+            color: var(--text);
+            border-color: #3B5273;
+            background: rgba(56, 189, 248, 0.06);
         }
-        .run {
+        .primary {
             display: inline-flex;
             align-items: center;
-            gap: 10px;
-            padding: 11px 18px;
+            justify-content: center;
+            gap: 8px;
+            height: 42px;
+            padding: 0 16px;
             border: 1px solid var(--accent);
+            border-radius: 6px;
             background: var(--accent);
-            color: #14181c;
-            font-weight: 700;
-            transition: background-color 140ms ease-out, border-color 140ms ease-out;
+            color: #06111F;
+            font-size: 0.8rem;
+            font-weight: 600;
+            transition: background-color 150ms ease-out, border-color 150ms ease-out, transform 80ms ease-out;
         }
-        .run:hover { background: var(--accent-bright); border-color: var(--accent-bright); }
-        .run:active { transform: translateY(1px); }
-        .run:disabled { opacity: 0.55; cursor: progress; }
-        .run .arrow { font-size: 0.9rem; line-height: 1; }
+        .primary svg { width: 16px; height: 16px; }
+        .primary:hover { background: var(--accent-strong); border-color: var(--accent-strong); }
+        .primary:active { transform: translateY(1px); }
+        .primary:disabled { opacity: 0.55; cursor: progress; }
         button:focus-visible,
         a:focus-visible {
-            outline: 1px solid var(--accent);
+            outline: 2px solid var(--accent);
             outline-offset: 2px;
         }
 
         .status {
             min-height: 1.4em;
-            margin: 14px 0 0;
-            font-family: var(--font-mono);
-            font-size: 0.68rem;
-            letter-spacing: 0.02em;
+            margin: 13px 0 0;
+            font-size: 0.74rem;
             color: var(--muted);
         }
         .status.error { color: var(--high); }
@@ -249,116 +253,146 @@
         .readout[data-state="medium"] { --state: var(--medium); }
         .readout[data-state="high"] { --state: var(--high); }
 
-        .state-chip {
+        .badge {
             display: inline-flex;
             align-items: center;
             gap: 7px;
-            padding: 5px 8px;
-            border: 1px solid var(--state);
-            border-radius: 2px;
+            padding: 5px 9px;
+            border: 1px solid color-mix(in srgb, var(--state) 48%, transparent);
+            border-radius: 4px;
+            background: color-mix(in srgb, var(--state) 12%, transparent);
             color: var(--state);
-            font-family: var(--font-mono);
-            font-size: 0.6rem;
+            font-size: 0.66rem;
             font-weight: 600;
-            letter-spacing: 0.13em;
+            letter-spacing: 0.07em;
             text-transform: uppercase;
             white-space: nowrap;
-            transition: color 200ms ease-out, border-color 200ms ease-out;
+            transition: color 180ms ease-out, border-color 180ms ease-out, background-color 180ms ease-out;
         }
-        .state-chip::before {
+        .badge::before {
             content: "";
-            width: 5px;
-            height: 5px;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
             background: currentColor;
         }
 
-        .gauge {
-            position: relative;
-            max-width: 344px;
-            margin: 10px auto 0;
+        .score-block {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 6px 0 2px;
         }
-        .gauge svg { display: block; width: 100%; height: auto; }
-        .gauge-track,
-        .gauge-fill {
+        .ring-wrap {
+            position: relative;
+            width: 232px;
+            max-width: 100%;
+        }
+        .ring { display: block; width: 100%; height: auto; }
+        .ring-track,
+        .ring-fill {
             fill: none;
             stroke-width: 9;
         }
-        .gauge-track { stroke: #232c34; }
-        .gauge-fill {
+        .ring-track { stroke: #1C2940; }
+        .ring-fill {
             stroke: var(--state);
-            stroke-dasharray: 371;
-            stroke-dashoffset: 371;
-            transition: stroke-dashoffset 700ms cubic-bezier(0.22, 1, 0.36, 1),
-                        stroke 220ms ease-out;
+            stroke-linecap: round;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+            stroke-dasharray: 591;
+            stroke-dashoffset: 591;
+            transition: stroke-dashoffset 650ms cubic-bezier(0.22, 1, 0.36, 1),
+                        stroke 180ms ease-out;
         }
-        .gauge .tick { stroke: var(--line-strong); stroke-width: 1.5; }
-        .score-readout {
+        .ring-marks line { stroke: #2E405C; stroke-width: 1.5; }
+        .ring-center {
             position: absolute;
-            left: 0;
-            right: 0;
-            bottom: 2px;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1px;
+            pointer-events: none;
+        }
+        .score-line {
             display: flex;
             align-items: baseline;
-            justify-content: center;
-            gap: 6px;
-            font-family: var(--font-mono);
+            gap: 4px;
             font-variant-numeric: tabular-nums;
         }
         .score {
-            font-size: clamp(3rem, 7vw, 3.9rem);
-            font-weight: 600;
+            font-size: 3.4rem;
+            font-weight: 700;
             line-height: 1;
-            letter-spacing: -0.02em;
+            letter-spacing: -0.035em;
             color: var(--state);
-            transition: color 200ms ease-out;
+            transition: color 180ms ease-out;
         }
-        .denom { font-size: 0.75rem; color: var(--faint); }
+        .denom { font-size: 0.78rem; font-weight: 500; color: var(--muted); }
+        .ring-caption {
+            margin-top: 5px;
+            font-size: 0.64rem;
+            font-weight: 500;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #66748A;
+        }
 
         .legend {
             display: flex;
-            justify-content: center;
             flex-wrap: wrap;
-            gap: 6px 18px;
-            margin: 16px 0 4px;
+            justify-content: center;
+            gap: 6px 16px;
+            margin: 14px 0 0;
             padding: 0;
             list-style: none;
-            font-family: var(--font-mono);
-            font-size: 0.58rem;
-            letter-spacing: 0.09em;
-            text-transform: uppercase;
-            color: var(--faint);
+            font-size: 0.66rem;
+            font-weight: 500;
+            color: var(--muted);
         }
-        .legend li { display: flex; align-items: center; gap: 6px; }
-        .swatch { width: 5px; height: 5px; }
+        .legend li {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            opacity: 0.5;
+            transition: opacity 180ms ease-out;
+        }
+        .legend li.is-active { opacity: 1; color: var(--text); }
+        .swatch { width: 6px; height: 6px; border-radius: 50%; }
         .swatch.low { background: var(--low); }
         .swatch.medium { background: var(--medium); }
         .swatch.high { background: var(--high); }
 
         .block {
-            margin-top: 22px;
+            margin-top: 20px;
             padding-top: 16px;
             border-top: 1px solid var(--line);
         }
         .block-head {
             display: flex;
-            align-items: baseline;
+            align-items: center;
             justify-content: space-between;
             gap: 10px;
             margin-bottom: 10px;
         }
         .block-head h3 {
+            display: flex;
+            align-items: center;
+            gap: 8px;
             margin: 0;
-            font-family: var(--font-mono);
-            font-size: 0.62rem;
+            font-size: 0.68rem;
             font-weight: 600;
-            letter-spacing: 0.15em;
+            letter-spacing: 0.09em;
             text-transform: uppercase;
             color: var(--muted);
         }
+        .block-head .icon { width: 15px; height: 15px; }
         .count {
-            font-family: var(--font-mono);
-            font-size: 0.6rem;
-            color: var(--faint);
+            font-size: 0.68rem;
+            font-weight: 500;
+            color: var(--muted);
             font-variant-numeric: tabular-nums;
         }
 
@@ -370,56 +404,53 @@
         }
         .signals li {
             position: relative;
-            padding: 0 0 12px 30px;
-            font-size: 0.87rem;
-            line-height: 1.5;
-            color: var(--ink);
+            padding: 0 0 11px 27px;
+            font-size: 0.85rem;
+            line-height: 1.55;
         }
+        .signals li:last-child { padding-bottom: 0; }
         .signals li::before {
             counter-increment: signal;
             content: counter(signal, decimal-leading-zero);
             position: absolute;
             left: 0;
-            top: 1px;
-            font-family: var(--font-mono);
-            font-size: 0.6rem;
-            color: var(--accent);
-            letter-spacing: 0.04em;
+            top: 2px;
+            font-size: 0.66rem;
+            font-weight: 500;
+            color: #66748A;
+            font-variant-numeric: tabular-nums;
         }
         .signals li.empty {
             padding-left: 0;
-            color: var(--faint);
-            font-family: var(--font-mono);
-            font-size: 0.7rem;
+            color: var(--muted);
+            font-size: 0.79rem;
         }
         .signals li.empty::before { content: none; }
 
-        .origin {
+        .sender {
             display: grid;
-            grid-template-columns: 72px minmax(0, 1fr);
-            gap: 0;
+            grid-template-columns: 76px minmax(0, 1fr);
             margin: 0;
         }
-        .origin dt,
-        .origin dd {
+        .sender dt,
+        .sender dd {
             margin: 0;
             padding: 8px 0;
             border-top: 1px solid var(--line);
         }
-        .origin dt {
-            font-family: var(--font-mono);
-            font-size: 0.6rem;
-            letter-spacing: 0.1em;
+        .sender dt {
+            font-size: 0.66rem;
+            font-weight: 600;
+            letter-spacing: 0.07em;
             text-transform: uppercase;
-            color: var(--faint);
+            color: var(--muted);
         }
-        .origin dd {
-            font-family: var(--font-mono);
-            font-size: 0.72rem;
-            color: var(--ink);
+        .sender dd {
+            font-size: 0.82rem;
+            font-weight: 500;
             overflow-wrap: anywhere;
         }
-        .origin dd.muted { color: var(--faint); }
+        .sender dd.muted { color: #66748A; }
 
         .links {
             margin: 0;
@@ -431,58 +462,68 @@
             border-top: 1px solid var(--line);
             overflow-wrap: anywhere;
         }
+        .links li:last-child { padding-bottom: 0; }
         .links li.empty {
             border-top: 0;
-            padding-top: 0;
-            color: var(--faint);
-            font-family: var(--font-mono);
-            font-size: 0.7rem;
+            padding: 0;
+            color: var(--muted);
+            font-size: 0.79rem;
         }
         .links a {
-            color: var(--ink);
+            color: var(--text);
+            font-size: 0.83rem;
+            font-weight: 500;
             text-decoration: underline;
-            text-decoration-color: var(--line-strong);
+            text-decoration-color: #3B5273;
             text-underline-offset: 3px;
-            font-size: 0.85rem;
+            transition: color 150ms ease-out, text-decoration-color 150ms ease-out;
         }
-        .links a:hover { text-decoration-color: var(--accent); }
+        .links a:hover {
+            color: var(--accent-strong);
+            text-decoration-color: var(--accent);
+        }
+        .links a.is-url {
+            font-family: var(--font-mono);
+            font-size: 0.73rem;
+            font-weight: 400;
+        }
+        .links a .external {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            margin-left: 5px;
+            vertical-align: -1px;
+            color: var(--muted);
+        }
         .link-url {
             display: block;
             margin-top: 3px;
             font-family: var(--font-mono);
-            font-size: 0.66rem;
+            font-size: 0.69rem;
+            line-height: 1.5;
             color: var(--muted);
-        }
-        .links .external {
-            margin-left: 6px;
-            font-family: var(--font-mono);
-            font-size: 0.7rem;
-            color: var(--faint);
         }
 
         .footer {
             display: flex;
             justify-content: space-between;
-            gap: 18px;
             flex-wrap: wrap;
-            max-width: 1240px;
-            margin: 24px auto 0;
+            gap: 12px;
+            max-width: 1180px;
+            margin: 22px auto 0;
             padding-top: 14px;
             border-top: 1px solid var(--line);
-            font-family: var(--font-mono);
-            font-size: 0.58rem;
-            letter-spacing: 0.09em;
-            text-transform: uppercase;
-            color: var(--faint);
+            font-size: 0.66rem;
+            color: #66748A;
         }
 
         @media (prefers-reduced-motion: no-preference) {
             .signals li:not(.empty) {
-                animation: signal-in 280ms cubic-bezier(0.2, 0.7, 0.3, 1) both;
+                animation: signal-in 200ms ease-out both;
             }
         }
         @keyframes signal-in {
-            from { opacity: 0; transform: translateY(4px); }
+            from { opacity: 0; transform: translateY(3px); }
             to { opacity: 1; transform: translateY(0); }
         }
         @media (prefers-reduced-motion: reduce) {
@@ -493,51 +534,58 @@
             }
         }
 
-        @media (max-width: 980px) {
-            body { padding: 22px 20px 32px; }
-            .workspace { grid-template-columns: 1fr; }
-            .instance .sep,
-            .instance .manual { display: none; }
+        @media (max-width: 960px) {
+            body { padding: 20px 20px 30px; }
+            .layout { grid-template-columns: 1fr; }
         }
-        @media (max-width: 560px) {
-            body { padding: 16px 14px 28px; }
-            .masthead { flex-wrap: wrap; align-items: flex-start; gap: 12px; }
-            .instance { width: 100%; }
+        @media (max-width: 620px) {
+            body { padding: 16px 14px 26px; }
+            .topbar { flex-wrap: wrap; gap: 12px; }
+            .topbar-meta { width: 100%; }
+            textarea { min-height: 280px; }
             .controls { flex-direction: column; align-items: stretch; }
-            .run { justify-content: center; }
-            .gauge { max-width: 300px; }
-            .origin { grid-template-columns: 62px minmax(0, 1fr); }
+            .primary { width: 100%; }
+            .sender { grid-template-columns: 68px minmax(0, 1fr); }
+            .ring-wrap { width: 208px; }
+            .score { font-size: 3rem; }
+            .footer { flex-direction: column; gap: 6px; }
         }
     </style>
 </head>
 <body>
-    <header class="masthead">
+    <header class="topbar">
         <div class="brand">
-            <svg class="mark" viewBox="0 0 34 34" aria-hidden="true" fill="none">
-                <circle cx="17" cy="17" r="14.5" stroke="#f0b35a" stroke-width="1.5" />
-                <circle cx="17" cy="17" r="6" stroke="#f0b35a" stroke-width="1.5" />
-                <circle cx="17" cy="17" r="1.4" fill="#f0b35a" />
-                <path d="M17 0.8v6M17 27.2v6M0.8 17h6M27.2 17h6" stroke="#f0b35a" stroke-width="1.2" />
-            </svg>
-            <div>
-                <h1>PhishLens</h1>
-                <p class="kicker">Email threat analysis</p>
-            </div>
+            <span class="brand-mark" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z" />
+                    <circle cx="12" cy="12" r="3" />
+                </svg>
+            </span>
+            <span>
+                <span class="brand-name">PhishLens</span>
+                <span class="brand-sub">Email threat analysis</span>
+            </span>
         </div>
-        <div class="instance">
-            <span class="live" aria-hidden="true"></span>
-            Local instance
-            <span class="sep">/</span>
-            <span class="manual">Manual review</span>
+        <div class="topbar-meta">
+            <span class="live-dot" aria-hidden="true"></span>
+            <span>Local instance</span>
+            <span class="meta-sep" aria-hidden="true"></span>
+            <span class="version">v0.1</span>
         </div>
     </header>
 
-    <main class="workspace">
+    <main class="layout">
         <section class="panel" aria-labelledby="evidence-title">
-            <div class="panel-head">
-                <h2 id="evidence-title"><span class="index">01</span> Evidence</h2>
-                <span class="meta" id="char-count">0 chars</span>
-            </div>
+            <header class="panel-head">
+                <h2 id="evidence-title">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <rect x="3" y="5" width="18" height="14" rx="2" />
+                        <path d="m3 7 9 6 9-6" />
+                    </svg>
+                    Evidence
+                </h2>
+                <span class="panel-meta" id="char-count">0 chars</span>
+            </header>
             <div class="panel-body">
                 <label class="field-label" for="email-input">Raw email</label>
                 <textarea id="email-input" spellcheck="false" placeholder="Paste the full email here, headers and all..."></textarea>
@@ -545,13 +593,16 @@
                 <div class="controls">
                     <div class="examples" role="group" aria-label="Load an example email">
                         <span class="control-label">Examples</span>
-                        <button type="button" data-example="1" aria-label="Load example 1">Ex 01</button>
-                        <button type="button" data-example="2" aria-label="Load example 2">Ex 02</button>
-                        <button type="button" data-example="3" aria-label="Load example 3">Ex 03</button>
+                        <button type="button" data-example="1">Example 1</button>
+                        <button type="button" data-example="2">Example 2</button>
+                        <button type="button" data-example="3">Example 3</button>
                     </div>
-                    <button type="button" id="analyze" class="run">
-                        <span class="run-label">Analyze</span>
-                        <span class="arrow" aria-hidden="true">→</span>
+                    <button type="button" id="analyze" class="primary">
+                        <span class="run-label">Analyze email</span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M5 12h14" />
+                            <path d="m13 6 6 6-6 6" />
+                        </svg>
                     </button>
                 </div>
 
@@ -560,37 +611,53 @@
         </section>
 
         <section class="panel readout" id="readout" data-state="idle" aria-labelledby="readout-title">
-            <div class="panel-head">
-                <h2 id="readout-title"><span class="index">02</span> Readout</h2>
-                <span class="state-chip" id="badge">Awaiting sample</span>
-            </div>
-            <div class="panel-body">
-                <div class="gauge">
-                    <svg viewBox="0 0 280 158" role="img" aria-label="Phishing score out of 100">
-                        <path class="gauge-track" d="M 22 132 A 118 118 0 0 1 258 132" />
-                        <path class="gauge-fill" id="gauge-fill" d="M 22 132 A 118 118 0 0 1 258 132" />
-                        <g class="ticks" aria-hidden="true">
-                            <line class="tick" x1="30" y1="132" x2="22" y2="132" />
-                            <line class="tick" x1="77" y1="46" x2="70" y2="36" />
-                            <line class="tick" x1="173" y1="31" x2="177" y2="20" />
-                            <line class="tick" x1="250" y1="132" x2="258" y2="132" />
-                        </g>
+            <header class="panel-head">
+                <h2 id="readout-title">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <circle cx="12" cy="12" r="9" />
+                        <path d="M12 3v3M12 18v3M3 12h3M18 12h3" />
+                        <circle cx="12" cy="12" r="2.5" />
                     </svg>
-                    <div class="score-readout">
-                        <span class="score" id="score">—</span>
-                        <span class="denom">/100</span>
+                    Threat score
+                </h2>
+                <span class="badge" id="badge">Awaiting sample</span>
+            </header>
+            <div class="panel-body">
+                <div class="score-block">
+                    <div class="ring-wrap">
+                        <svg class="ring" viewBox="0 0 220 220" role="img" aria-label="Phishing risk score out of 100">
+                            <circle class="ring-track" cx="110" cy="110" r="94" />
+                            <circle class="ring-fill" id="gauge-fill" cx="110" cy="110" r="94" />
+                            <g class="ring-marks" aria-hidden="true">
+                                <line x1="204.1" y1="140.6" x2="210.8" y2="142.8" />
+                                <line x1="51.8" y1="190.1" x2="47.7" y2="195.8" />
+                            </g>
+                        </svg>
+                        <div class="ring-center">
+                            <span class="score-line">
+                                <span class="score" id="score">—</span>
+                                <span class="denom">/100</span>
+                            </span>
+                            <span class="ring-caption">Risk score</span>
+                        </div>
                     </div>
-                </div>
 
-                <ul class="legend" aria-label="Score ranges">
-                    <li><span class="swatch low"></span>0–29 Low</li>
-                    <li><span class="swatch medium"></span>30–59 Suspicious</li>
-                    <li><span class="swatch high"></span>60–100 High</li>
-                </ul>
+                    <ul class="legend" aria-label="Score ranges">
+                        <li data-range="low"><span class="swatch low"></span>0–29 Low</li>
+                        <li data-range="medium"><span class="swatch medium"></span>30–59 Suspicious</li>
+                        <li data-range="high"><span class="swatch high"></span>60–100 High</li>
+                    </ul>
+                </div>
 
                 <section class="block" aria-labelledby="signals-title">
                     <div class="block-head">
-                        <h3 id="signals-title">Signals</h3>
+                        <h3 id="signals-title">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <circle cx="12" cy="12" r="9" />
+                                <path d="M12 8v4M12 16h.01" />
+                            </svg>
+                            Signals
+                        </h3>
                         <span class="count" id="reason-count">0</span>
                     </div>
                     <ol class="signals" id="reasons">
@@ -598,11 +665,17 @@
                     </ol>
                 </section>
 
-                <section class="block" aria-labelledby="origin-title">
+                <section class="block" aria-labelledby="sender-title">
                     <div class="block-head">
-                        <h3 id="origin-title">Origin</h3>
+                        <h3 id="sender-title">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                                <circle cx="12" cy="7" r="4" />
+                            </svg>
+                            Sender
+                        </h3>
                     </div>
-                    <dl class="origin">
+                    <dl class="sender">
                         <dt>From</dt><dd class="muted" id="sender">—</dd>
                         <dt>Domain</dt><dd class="muted" id="sender-domain">—</dd>
                         <dt>Reply-to</dt><dd class="muted" id="reply-to">—</dd>
@@ -611,7 +684,13 @@
 
                 <section class="block" aria-labelledby="links-title">
                     <div class="block-head">
-                        <h3 id="links-title">Links</h3>
+                        <h3 id="links-title">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                            </svg>
+                            Links
+                        </h3>
                         <span class="count" id="link-count">0</span>
                     </div>
                     <ul class="links" id="links">
@@ -623,7 +702,7 @@
     </main>
 
     <footer class="footer">
-        <span>PhishLens · Local instance</span>
+        <span>PhishLens · Local analysis</span>
         <span>Signals: reply-to · link target · urgency · payment/login</span>
     </footer>
 
@@ -640,13 +719,16 @@
         const readout = document.getElementById("readout");
         const badge = document.getElementById("badge");
         const score = document.getElementById("score");
+        const ring = document.querySelector(".ring");
         const gaugeFill = document.getElementById("gauge-fill");
         const reasonCount = document.getElementById("reason-count");
         const linkCount = document.getElementById("link-count");
         const charCount = document.getElementById("char-count");
+        const legendItems = [...document.querySelectorAll(".legend li")];
 
-        const gaugeLength = gaugeFill.getTotalLength();
-        gaugeFill.style.strokeDasharray = `${gaugeLength}`;
+        const ringLength = 2 * Math.PI * 94;
+        gaugeFill.style.strokeDasharray = `${ringLength}`;
+        gaugeFill.style.strokeDashoffset = `${ringLength}`;
 
         function setStatus(message, isError = false) {
             status.textContent = message;
@@ -655,7 +737,7 @@
 
         function setBusy(busy) {
             analyzeButton.disabled = busy;
-            analyzeButton.querySelector(".run-label").textContent = busy ? "Analyzing" : "Analyze";
+            analyzeButton.querySelector(".run-label").textContent = busy ? "Analyzing..." : "Analyze email";
         }
 
         function show(value) {
@@ -663,10 +745,16 @@
             return String(value);
         }
 
-        function riskState(value) {
+        function riskFor(value) {
             if (value >= 60) return { state: "high", label: "High risk" };
             if (value >= 30) return { state: "medium", label: "Suspicious" };
             return { state: "low", label: "Low risk" };
+        }
+
+        function setLegend(state) {
+            for (const item of legendItems) {
+                item.classList.toggle("is-active", item.dataset.range === state);
+            }
         }
 
         function setOrigin(id, value) {
@@ -679,7 +767,9 @@
             readout.dataset.state = "idle";
             badge.textContent = "Awaiting sample";
             score.textContent = "—";
-            gaugeFill.style.strokeDashoffset = `${gaugeLength}`;
+            ring.setAttribute("aria-label", "Phishing risk score out of 100");
+            gaugeFill.style.strokeDashoffset = `${ringLength}`;
+            setLegend("idle");
             reasonCount.textContent = "0";
             linkCount.textContent = "0";
 
@@ -703,12 +793,14 @@
         }
 
         function render(data) {
-            const risk = riskState(data.score);
+            const risk = riskFor(data.score);
             readout.dataset.state = risk.state;
             badge.textContent = risk.label;
             score.textContent = data.score;
+            ring.setAttribute("aria-label", `Phishing risk score ${data.score} out of 100`);
             gaugeFill.style.strokeDashoffset =
-                `${gaugeLength * (1 - Math.max(0, Math.min(100, data.score)) / 100)}`;
+                `${ringLength * (1 - Math.max(0, Math.min(100, data.score)) / 100)}`;
+            setLegend(risk.state);
 
             const reasons = document.getElementById("reasons");
             reasons.replaceChildren();
@@ -722,7 +814,7 @@
             data.reasons.forEach((reason, index) => {
                 const item = document.createElement("li");
                 item.textContent = reason;
-                item.style.animationDelay = `${index * 45}ms`;
+                item.style.animationDelay = `${index * 25}ms`;
                 reasons.append(item);
             });
 
@@ -746,13 +838,27 @@
                 anchor.textContent = link.text || link.url;
                 anchor.target = "_blank";
                 anchor.rel = "noopener noreferrer";
-                const external = document.createElement("span");
-                external.className = "external";
-                external.setAttribute("aria-hidden", "true");
-                external.textContent = "↗";
-                anchor.append(external);
+
+                const hasDisplayText = Boolean(link.text) && link.text !== link.url;
+                if (!hasDisplayText) anchor.classList.add("is-url");
+                if (hasDisplayText) {
+                    const external = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+                    external.setAttribute("class", "external");
+                    external.setAttribute("viewBox", "0 0 24 24");
+                    external.setAttribute("fill", "none");
+                    external.setAttribute("stroke", "currentColor");
+                    external.setAttribute("stroke-width", "1.8");
+                    external.setAttribute("stroke-linecap", "round");
+                    external.setAttribute("stroke-linejoin", "round");
+                    external.setAttribute("aria-hidden", "true");
+                    external.innerHTML =
+                        '<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />' +
+                        '<path d="M15 3h6v6" />' +
+                        '<path d="M10 14 21 3" />';
+                    anchor.append(external);
+                }
                 item.append(anchor);
-                if (link.text && link.text !== link.url) {
+                if (hasDisplayText) {
                     const url = document.createElement("span");
                     url.className = "link-url";
                     url.textContent = link.url;
