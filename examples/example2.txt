@@ -1,0 +1,20 @@
+From: "International Lottery Board" <winner@lottery-claim.example>
+Reply-To: claims@prize-redemption.example
+To: lucky.person@mailbox.example
+Subject: You've Won $1,000,000!
+Date: Tue, 27 Oct 2026 03:02:00 +0000
+
+Congratulations [Name]!
+
+You've been selected as the winner of our international lottery! 
+You have won ONE MILLION DOLLARS ($1,000,000.00).
+
+To claim your prize, please send us your:
+- Full name
+- Address
+- Bank account details
+- Social Security Number
+
+Send this information to prize-claim@example-scams.com within 48 hours.
+
+This is 100% legitimate! Don't miss out!

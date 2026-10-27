@@ -1,0 +1,21 @@
+From: "Delivery Services" <no-reply@parcel-notice.example>
+Reply-To: no-reply@parcel-notice.example
+To: customer@mailbox.example
+Subject: Package Delivery Failed - Action Required
+Date: Tue, 27 Oct 2026 11:47:00 +0000
+
+Dear Customer,
+
+Your package delivery has failed. We tried to deliver to your address 
+but no one was home.
+
+To reschedule delivery, please pay a small re-delivery fee of $2.99 
+by clicking the link below:
+
+http://delivery-reschedule-fake.com/pay
+
+Your package will be returned to sender if not claimed within 24 hours.
+
+Thank you,
+Delivery Services
+[Made-up Courier Co.]
