@@ -1,10 +1,12 @@
 # SpoofQuill
 
-SpoofQuill reads a raw email and scores how much it looks like phishing.
+SpoofQuill reads an email and scores how much it looks like phishing.
 
 ## What it does
 
-Paste an email, headers included, or load one of the examples. SpoofQuill returns a score from 0 to 100, the reasons behind that score, and the sender facts it could pull from the message.
+Enter the sender, reply-to, subject, and message, or load one of the examples. SpoofQuill checks the fields, then returns a score from 0 to 100, the reasons behind that score, and the sender facts it could pull from the message.
+
+The From field is required and must be a valid email address. Reply-To is optional but must be valid when filled. Subject needs at least 3 characters, and Message needs at least 20. Inline errors appear before any request is sent.
 
 Four signals add points:
 
@@ -18,7 +20,7 @@ When several signals appear in one message, a stacking bonus adds more points. U
 ## Project structure
 
 - `backend/` holds the FastAPI server, the email parser, and the scoring rules.
-- `frontend/` holds the page: paste box, examples, score, and findings.
+- `frontend/` holds the page: the four fields, examples, score, and findings.
 - `examples/` holds made-up phishing emails for testing.
 
 ## Run it
@@ -45,4 +47,23 @@ Open http://127.0.0.1:8787/ in a browser.
 
 ## API
 
-`POST /analyze` takes JSON with a `raw_email` field and returns the score, the reasons, the sender, the sender domain, the reply-to address, and the links.
+`POST /analyze` returns the score, the reasons, the sender, the sender domain, the reply-to address, and the links.
+
+Send either a full raw email:
+
+```json
+{ "raw_email": "From: a@b.example\nSubject: hi\n\nHello" }
+```
+
+Or the separate fields:
+
+```json
+{
+  "sender": "a@b.example",
+  "reply_to": "help@b.example",
+  "subject": "Account notice",
+  "body": "The message body, plain text or HTML."
+}
+```
+
+`raw_email` wins when both forms are present. Structured input is validated on the server as well as in the browser, and an invalid field returns HTTP 422 before scoring.

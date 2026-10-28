@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="SpoofQuill reads a raw email and shows the warning signs behind a phishing score from 0 to 100.">
+    <meta name="description" content="SpoofQuill reads an email and shows the warning signs behind a phishing score from 0 to 100.">
     <title>SpoofQuill: email threat analysis</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -313,14 +313,80 @@
             text-transform: uppercase;
             color: var(--muted);
         }
-        #char-count {
+        .counter {
+            margin: 0.55rem 0 0;
+            font-family: var(--mono);
+            font-size: 0.64rem;
+            letter-spacing: 0.03em;
             color: var(--faint);
+            text-align: right;
             white-space: nowrap;
         }
-        textarea {
+        .counter.is-met {
+            color: var(--muted);
+        }
+        .composer {
+            display: grid;
+            gap: clamp(1.15rem, 2vw, 1.55rem);
+        }
+        .control.is-invalid .text-input,
+        .control.is-invalid textarea {
+            border-color: var(--high);
+        }
+        .field-error {
+            margin: 0.55rem 0 0;
+            font-family: var(--mono);
+            font-size: 0.64rem;
+            letter-spacing: 0.02em;
+            line-height: 1.5;
+            color: var(--high);
+        }
+        .field-error:empty {
+            display: none;
+        }
+        .suggestion {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.5rem 0.7rem;
+            margin-top: 0.65rem;
+            font-family: var(--mono);
+            font-size: 0.66rem;
+            letter-spacing: 0.02em;
+            line-height: 1.5;
+            color: var(--muted);
+        }
+        .suggestion[hidden] {
+            display: none;
+        }
+        .suggestion strong {
+            font-weight: 500;
+            color: var(--ink);
+        }
+        .suggest-fill {
+            padding: 0.38rem 0.68rem 0.32rem;
+            border: 1px solid var(--mid);
+            background: none;
+            font-family: var(--mono);
+            font-size: 0.62rem;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: var(--mid);
+            cursor: pointer;
+            transition:
+                color 0.35s var(--ease-ui),
+                background-color 0.35s var(--ease-ui),
+                border-color 0.35s var(--ease-ui);
+        }
+        .suggest-fill:hover {
+            background: var(--mid);
+            border-color: var(--mid);
+            color: var(--bg);
+        }
+        textarea,
+        .text-input {
             display: block;
             width: 100%;
-            min-height: clamp(17rem, 31vw, 23rem);
             margin: 0;
             padding: clamp(0.85rem, 1.3vw, 1.05rem) clamp(0.9rem, 1.4vw, 1.15rem);
             border: 1px solid var(--ink);
@@ -331,14 +397,22 @@
             font-size: 0.8rem;
             line-height: 1.75;
             caret-color: var(--ink);
-            resize: vertical;
             transition: border-color 0.4s var(--ease-ui), background-color 0.4s var(--ease-ui);
         }
-        textarea::placeholder {
+        textarea {
+            min-height: clamp(11rem, 20vw, 14rem);
+            resize: vertical;
+        }
+        .text-input {
+            height: 3.1rem;
+        }
+        textarea::placeholder,
+        .text-input::placeholder {
             color: var(--faint);
             opacity: 1;
         }
-        textarea:focus {
+        textarea:focus,
+        .text-input:focus {
             outline: none;
             border-color: var(--ink);
             background: rgba(242, 240, 235, 0.03);
@@ -950,7 +1024,10 @@
                 font-size: 0.6rem;
             }
             textarea {
-                min-height: 19rem;
+                min-height: 12rem;
+                font-size: 0.76rem;
+            }
+            .text-input {
                 font-size: 0.76rem;
             }
             .examples {
@@ -993,7 +1070,7 @@
 
             <div class="hero-foot">
                 <p class="lede">
-                    Paste a suspicious email and SpoofQuill reads the headers and the links. It returns a score
+                    Enter a suspicious email and SpoofQuill reads the sender, subject, and links. It returns a score
                     from 0 to 100 and lists the signs that pushed the score up.
                 </p>
                 <div class="hero-meta">
@@ -1016,23 +1093,62 @@
             <div class="section-head">
                 <span class="section-index">01</span>
                 <h2 id="analyzer-title">Analyzer</h2>
-                <span class="section-meta">Raw email, one at a time</span>
+                <span class="section-meta">Four fields, one message</span>
             </div>
 
             <div class="field-grid">
                 <aside class="field-aside">
-                    <p class="field-title">Paste the<br>email.</p>
+                    <p class="field-title">Enter the<br>email.</p>
                     <p class="field-note">
-                        Include the headers, the body, and the links. The score comes from the text you paste.
+                        The From address, subject, and message body. Links in the body are read the same way as before.
                     </p>
                 </aside>
 
-                <div class="field">
-                    <div class="field-head">
-                        <label for="email-input">Raw message</label>
-                        <span id="char-count">0 characters</span>
+                <div class="field composer">
+                    <div class="control" data-field="sender">
+                        <div class="field-head">
+                            <label for="input-sender">From</label>
+                            <span>Required</span>
+                        </div>
+                        <input id="input-sender" class="text-input" type="text" inputmode="email" autocomplete="off" spellcheck="false" placeholder="security@accounts-fake-bank.example">
+                        <p class="field-error" id="sender-error" role="alert"></p>
+                        <div class="suggestion" id="sender-suggestion" hidden>
+                            <span>Did you mean <strong id="sender-suggestion-value"></strong>?</span>
+                            <button type="button" class="suggest-fill" data-suggest="sender">Use this address</button>
+                        </div>
                     </div>
-                    <textarea id="email-input" rows="10" spellcheck="false" placeholder="Paste the raw email here. Include headers, body, and links."></textarea>
+
+                    <div class="control" data-field="reply-to">
+                        <div class="field-head">
+                            <label for="input-reply-to">Reply-To</label>
+                            <span>Optional</span>
+                        </div>
+                        <input id="input-reply-to" class="text-input" type="text" inputmode="email" autocomplete="off" spellcheck="false" placeholder="Leave empty if replies go to the sender">
+                        <p class="field-error" id="reply-to-error" role="alert"></p>
+                        <div class="suggestion" id="reply-to-suggestion" hidden>
+                            <span>Did you mean <strong id="reply-to-suggestion-value"></strong>?</span>
+                            <button type="button" class="suggest-fill" data-suggest="reply-to">Use this address</button>
+                        </div>
+                    </div>
+
+                    <div class="control" data-field="subject">
+                        <div class="field-head">
+                            <label for="input-subject">Subject</label>
+                            <span>Required, 3 characters minimum</span>
+                        </div>
+                        <input id="input-subject" class="text-input" type="text" autocomplete="off" placeholder="Urgent: your account is suspended">
+                        <p class="field-error" id="subject-error" role="alert"></p>
+                    </div>
+
+                    <div class="control" data-field="body">
+                        <div class="field-head">
+                            <label for="input-body">Message</label>
+                            <span>Required, 20 characters minimum</span>
+                        </div>
+                        <textarea id="input-body" rows="8" spellcheck="false" placeholder="Paste the message body here. Links and HTML anchors are read as before."></textarea>
+                        <p class="counter" id="body-count">0 / 20 minimum</p>
+                        <p class="field-error" id="body-error" role="alert"></p>
+                    </div>
 
                     <div class="examples" role="group" aria-label="Load an example email">
                         <span class="examples-label">Examples</span>
@@ -1051,7 +1167,7 @@
                 </svg>
             </button>
 
-            <p class="status" id="status" role="status" aria-live="polite">Paste an email or load an example.</p>
+            <p class="status" id="status" role="status" aria-live="polite">Fill in the fields or load an example.</p>
         </section>
 
         <div class="closing shell">
@@ -1072,7 +1188,7 @@
                             <span class="state-dot" aria-hidden="true"></span>
                             <span id="state-label">Awaiting sample</span>
                         </span>
-                        <p id="score-caption">Paste a message to read its score.</p>
+                        <p id="score-caption">Fill in the fields to read a score.</p>
                     </div>
                 </div>
 
@@ -1172,7 +1288,12 @@
             3: "/examples/example3.txt",
         };
 
-        const input = document.getElementById("email-input");
+        const FIELDS = {
+            sender: document.getElementById("input-sender"),
+            "reply-to": document.getElementById("input-reply-to"),
+            subject: document.getElementById("input-subject"),
+            body: document.getElementById("input-body"),
+        };
         const analyzeButton = document.getElementById("analyze");
         const analyzeLabel = analyzeButton.querySelector(".btn-label");
         const status = document.getElementById("status");
@@ -1184,7 +1305,37 @@
         const scoreFill = document.getElementById("score-fill");
         const reasonCount = document.getElementById("reason-count");
         const linkCount = document.getElementById("link-count");
-        const charCount = document.getElementById("char-count");
+        const bodyCount = document.getElementById("body-count");
+
+        const EMAIL_RE = /^[^@\s<>]+@[^@\s<>]+\.[^@\s<>]+$/;
+        const KNOWN_DOMAINS = [
+            "gmail.com",
+            "yahoo.com",
+            "outlook.com",
+            "hotmail.com",
+            "icloud.com",
+            "protonmail.com",
+            "aol.com",
+        ];
+        const SUBJECT_MIN = 3;
+        const BODY_MIN = 20;
+        const fieldErrors = {
+            sender: document.getElementById("sender-error"),
+            "reply-to": document.getElementById("reply-to-error"),
+            subject: document.getElementById("subject-error"),
+            body: document.getElementById("body-error"),
+        };
+        const suggestions = {
+            sender: {
+                box: document.getElementById("sender-suggestion"),
+                value: document.getElementById("sender-suggestion-value"),
+            },
+            "reply-to": {
+                box: document.getElementById("reply-to-suggestion"),
+                value: document.getElementById("reply-to-suggestion-value"),
+            },
+        };
+        const pendingSuggestions = {};
 
         const RISK = {
             low: {
@@ -1210,6 +1361,114 @@
             analyzeButton.disabled = busy;
             analyzeButton.setAttribute("aria-busy", String(busy));
             analyzeLabel.textContent = busy ? "Reading..." : "Analyze email";
+        }
+
+        function valueOf(name) {
+            return FIELDS[name].value.trim();
+        }
+
+        function setFieldError(name, message) {
+            fieldErrors[name].textContent = message || "";
+            FIELDS[name].closest(".control").classList.toggle("is-invalid", Boolean(message));
+            FIELDS[name].setAttribute("aria-invalid", message ? "true" : "false");
+        }
+
+        function editDistance(a, b) {
+            if (a === b) return 0;
+            const rows = [];
+            for (let i = 0; i <= a.length; i += 1) {
+                rows.push([i]);
+            }
+            for (let j = 1; j <= b.length; j += 1) {
+                rows[0][j] = j;
+            }
+            for (let i = 1; i <= a.length; i += 1) {
+                for (let j = 1; j <= b.length; j += 1) {
+                    const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+                    rows[i][j] = Math.min(
+                        rows[i - 1][j] + 1,
+                        rows[i][j - 1] + 1,
+                        rows[i - 1][j - 1] + cost
+                    );
+                }
+            }
+            return rows[a.length][b.length];
+        }
+
+        function suggestAddress(value) {
+            const text = value.trim();
+            const at = text.lastIndexOf("@");
+            if (at < 1) return null;
+            const local = text.slice(0, at);
+            const domain = text.slice(at + 1).toLowerCase();
+            if (!local || !domain || /[@\s<>]/.test(local) || /[\s<>]/.test(domain)) return null;
+
+            let closest = null;
+            let closestDistance = Infinity;
+            for (const known of KNOWN_DOMAINS) {
+                const distance = editDistance(domain, known);
+                if (distance < closestDistance) {
+                    closest = known;
+                    closestDistance = distance;
+                }
+            }
+            if (closestDistance < 1 || closestDistance > 2) return null;
+            return `${local}@${closest}`;
+        }
+
+        function refreshSuggestion(name) {
+            const target = suggestions[name];
+            if (!target) return;
+            const suggestion = suggestAddress(FIELDS[name].value);
+            pendingSuggestions[name] = suggestion;
+            target.value.textContent = suggestion || "";
+            target.box.hidden = !suggestion;
+        }
+
+        function updateBodyCount() {
+            const length = valueOf("body").length;
+            if (length < BODY_MIN) {
+                bodyCount.textContent = `${length} / ${BODY_MIN} minimum`;
+                bodyCount.classList.remove("is-met");
+            } else {
+                bodyCount.textContent = `${length} characters`;
+                bodyCount.classList.add("is-met");
+            }
+        }
+
+        function validateField(name) {
+            const value = valueOf(name);
+            if (name === "sender") {
+                if (!value) return "Enter the sender address.";
+                if (!EMAIL_RE.test(value)) return "Enter a valid email address, like name@example.com.";
+                return "";
+            }
+            if (name === "reply-to") {
+                if (value && !EMAIL_RE.test(value)) return "Enter a valid email address, or leave this empty.";
+                return "";
+            }
+            if (name === "subject") {
+                if (!value) return "Enter a subject line.";
+                if (value.length < SUBJECT_MIN) return `Use at least ${SUBJECT_MIN} characters.`;
+                return "";
+            }
+            if (name === "body") {
+                if (!value) return "Enter the message body.";
+                if (value.length < BODY_MIN) return `Use at least ${BODY_MIN} characters.`;
+                return "";
+            }
+            return "";
+        }
+
+        function validateAll() {
+            let firstInvalid = null;
+            for (const name of Object.keys(FIELDS)) {
+                const message = validateField(name);
+                setFieldError(name, message);
+                if (message && !firstInvalid) firstInvalid = name;
+            }
+            if (firstInvalid) FIELDS[firstInvalid].focus({ preventScroll: true });
+            return !firstInvalid;
         }
 
         function show(value) {
@@ -1244,7 +1503,7 @@
 
         function resetReadout() {
             readout.classList.remove("has-result");
-            setState("idle", "Awaiting sample", "Paste a message to read its score.");
+            setState("idle", "Awaiting sample", "Fill in the fields to read a score.");
             score.textContent = "·";
             score.setAttribute("aria-label", "Phishing risk score");
             scoreFill.style.width = "0%";
@@ -1341,14 +1600,42 @@
             restartResultAnimation();
         }
 
+        function parseExample(text) {
+            const normalized = text.replace(/\r\n?/g, "\n");
+            const split = normalized.indexOf("\n\n");
+            const headerText = split === -1 ? "" : normalized.slice(0, split);
+            const body = split === -1 ? normalized : normalized.slice(split + 2);
+            const parsed = { sender: "", "reply-to": "", subject: "", body: body.trim() };
+
+            for (const line of headerText.split("\n")) {
+                const match = line.match(/^(From|Reply-To|Subject):\s*(.*)$/i);
+                if (!match) continue;
+                const key = match[1].toLowerCase();
+                const raw = match[2].trim();
+                if (key === "subject") {
+                    parsed.subject = raw;
+                    continue;
+                }
+                const angle = raw.match(/<([^<>]+)>/);
+                const email = angle ? angle[1].trim() : (raw.match(/[^\s<>]+@[^\s<>]+/) || [""])[0];
+                parsed[key === "from" ? "sender" : "reply-to"] = email;
+            }
+            return parsed;
+        }
+
         async function loadExample(number) {
             setStatus(`Loading example ${number}...`);
             try {
                 const response = await fetch(EXAMPLES[number]);
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                input.value = await response.text();
-                input.scrollTop = 0;
-                charCount.textContent = `${input.value.length.toLocaleString()} characters`;
+                const parsed = parseExample(await response.text());
+                for (const name of Object.keys(FIELDS)) {
+                    FIELDS[name].value = parsed[name] || "";
+                    setFieldError(name, "");
+                    if (suggestions[name]) refreshSuggestion(name);
+                }
+                FIELDS.body.scrollTop = 0;
+                updateBodyCount();
                 resetReadout();
                 setStatus(`Example ${number} loaded. Ready to analyze.`);
             } catch (error) {
@@ -1369,9 +1656,9 @@
         }
 
         async function analyze() {
-            const rawEmail = input.value;
-            if (!rawEmail.trim()) {
-                setStatus("Paste an email first, or load one of the examples.", true);
+            if (!validateAll()) {
+                resetReadout();
+                setStatus("Check the highlighted fields, then analyze again.", true);
                 return;
             }
 
@@ -1381,7 +1668,12 @@
                 const response = await fetch("/analyze", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ raw_email: rawEmail }),
+                    body: JSON.stringify({
+                        sender: valueOf("sender"),
+                        reply_to: valueOf("reply-to") || null,
+                        subject: valueOf("subject"),
+                        body: valueOf("body"),
+                    }),
                 });
 
                 if (!response.ok) {
@@ -1410,9 +1702,26 @@
             }
         }
 
-        input.addEventListener("input", () => {
-            charCount.textContent = `${input.value.length.toLocaleString()} characters`;
-        });
+        for (const name of Object.keys(FIELDS)) {
+            FIELDS[name].addEventListener("input", () => {
+                if (fieldErrors[name].textContent) setFieldError(name, "");
+                if (name === "body") updateBodyCount();
+                if (suggestions[name]) refreshSuggestion(name);
+            });
+        }
+
+        for (const button of document.querySelectorAll("[data-suggest]")) {
+            button.addEventListener("click", () => {
+                const name = button.dataset.suggest;
+                const suggestion = pendingSuggestions[name];
+                if (!suggestion) return;
+                FIELDS[name].value = suggestion;
+                pendingSuggestions[name] = null;
+                suggestions[name].box.hidden = true;
+                setFieldError(name, "");
+                FIELDS[name].focus({ preventScroll: true });
+            });
+        }
 
         for (const button of document.querySelectorAll("[data-example]")) {
             button.addEventListener("click", () => loadExample(button.dataset.example));

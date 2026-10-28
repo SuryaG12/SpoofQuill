@@ -87,6 +87,30 @@ def parse_email(raw: str) -> ParsedEmail:
     )
 
 
+def parse_fields(
+    sender: str,
+    reply_to: str | None,
+    subject: str,
+    body: str,
+) -> ParsedEmail:
+    """Build a ParsedEmail directly from the composer's separate fields."""
+    sender = (sender or "").strip()
+    reply_to = (reply_to or "").strip() or None
+
+    # A reply-to pointing at the sender adds nothing; keep only real differences.
+    if reply_to and sender and reply_to.lower() == sender.lower():
+        reply_to = None
+
+    return ParsedEmail(
+        sender=sender or None,
+        sender_domain=_domain(sender),
+        reply_to=reply_to,
+        subject=" ".join((subject or "").split()),
+        body=body or "",
+        links=_extract_links(body or ""),
+    )
+
+
 def _address(value) -> str | None:
     """Pull the bare address out of a header value like 'Name <a@b.com>'."""
     if value is None:
