@@ -1,11 +1,15 @@
 {
     "$schema": "node_modules/wrangler/config-schema.json",
     "name": "spoofquill",
-    "main": "worker.py",
+    "main": "dist/worker.py",
     "compatibility_date": "2026-10-27",
     "compatibility_flags": [
         "python_workers"
     ],
+    "build": {
+        "command": "node scripts/prepare-worker.mjs"
+    },
+    "workers_dev": true,
     "assets": {
         "directory": "./public/",
         "binding": "ASSETS",
