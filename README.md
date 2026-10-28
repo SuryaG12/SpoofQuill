@@ -24,11 +24,24 @@ When several signals appear in one message, a stacking bonus adds more points. U
 ## Run it
 
 ```bash
-pip install -r requirements.txt
+pip install -r requirements-local.txt
 uvicorn backend.app:app --reload
 ```
 
 Open http://127.0.0.1:8000/ in a browser.
+
+## Run on Cloudflare Workers
+
+This branch runs the same FastAPI app on Cloudflare Python Workers. The page and examples are served from Workers Static Assets, and `/analyze` and `/health` run through FastAPI.
+
+```bash
+uv sync
+uv run pywrangler dev
+```
+
+Open http://127.0.0.1:8787/ in a browser.
+
+`pywrangler deploy` publishes the Worker. No Cloudflare account is needed for local development.
 
 ## API
 

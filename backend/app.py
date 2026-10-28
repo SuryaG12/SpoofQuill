@@ -6,9 +6,9 @@ reasons behind it, and the facts the parser pulled out of the message.
 
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel, Field
 
 try:  # works both as "backend.app" and as "python backend/app.py"
@@ -78,15 +78,34 @@ def analyze(request: AnalyzeRequest) -> AnalyzeResponse:
     )
 
 
-# Serve the page and the sample emails for local use, so the frontend can be
-# opened at http://127.0.0.1:8000/ without a second web server.
-app.mount(
-    "/examples",
-    StaticFiles(directory=PROJECT_ROOT / "examples"),
-    name="examples",
-)
-app.mount(
-    "/",
-    StaticFiles(directory=PROJECT_ROOT / "frontend", html=True),
-    name="frontend",
-)
+async def _static_file(asset_path: str, local_path: str, request: Request) -> Response:
+    """Serve a local file, or the same path from Cloudflare's ASSETS binding."""
+    env = request.scope.get("env")
+    assets = getattr(env, "ASSETS", None) if env is not None else None
+    if assets is not None:
+        asset = await assets.fetch(f"https://assets.local/{asset_path}")
+        return Response(
+            content=await asset.bytes(),
+            status_code=asset.status,
+            headers=asset.headers,
+        )
+
+    path = PROJECT_ROOT / local_path
+    if not path.is_file():
+        raise HTTPException(status_code=404)
+    return FileResponse(path)
+
+
+@app.get("/", include_in_schema=False)
+async def frontend(request: Request) -> Response:
+    """Serve the page locally and through the Worker's static assets."""
+    return await _static_file("index.html", "frontend/index.html", request)
+
+
+@app.get("/examples/{filename}", include_in_schema=False)
+async def example(filename: str, request: Request) -> Response:
+    """Serve the sample emails locally and through the Worker's static assets."""
+    if filename != Path(filename).name or not filename.endswith(".txt"):
+        raise HTTPException(status_code=404)
+    path = f"examples/{filename}"
+    return await _static_file(path, path, request)

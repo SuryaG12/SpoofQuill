@@ -1,0 +1,19 @@
+From: "Account Security" <security@accounts-fake-bank.example>
+Reply-To: security@accounts-fake-bank.example
+To: customer@mailbox.example
+Subject: URGENT: Your Account Will Be Suspended!
+Date: Mon, 26 Oct 2026 09:14:00 +0000
+
+Hello [Name],
+
+We have detected suspicious activity on your account. For your security, 
+your account will be suspended within 24 hours unless you verify your identity immediately.
+
+Click the link below to verify:
+http://fake-login-example.com/verify
+
+Act now - this is urgent!
+
+Best regards,
+Security Team
+[Fake Company Name]

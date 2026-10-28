@@ -1,0 +1,1485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="SpoofQuill reads a raw email and shows the warning signs behind a phishing score from 0 to 100.">
+    <title>SpoofQuill: email threat analysis</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            color-scheme: dark;
+            --bg: #080808;
+            --ink: #F2F0EB;
+            --muted: #8A8882;
+            --faint: #5E5C57;
+            --line: #232323;
+            --low: #B7E4A8;
+            --mid: #F0C674;
+            --high: #FF7A6B;
+            --state: var(--muted);
+
+            --display: "Inter Tight", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            --mono: "IBM Plex Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+
+            --gutter: clamp(2rem, 6vw, 6rem);
+            --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+            --ease-ui: cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * { box-sizing: border-box; }
+        html {
+            background: var(--bg);
+            scroll-behavior: smooth;
+        }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: var(--bg);
+            color: var(--ink);
+            font-family: var(--display);
+            font-size: 16px;
+            font-weight: 400;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            overflow-x: hidden;
+        }
+        ::selection {
+            background: var(--ink);
+            color: var(--bg);
+        }
+        a {
+            color: inherit;
+        }
+        button {
+            font: inherit;
+            color: inherit;
+        }
+        :focus-visible {
+            outline: 1px solid var(--ink);
+            outline-offset: 4px;
+        }
+
+        .shell {
+            width: 100%;
+            max-width: 1600px;
+            margin-inline: auto;
+            padding-inline: var(--gutter);
+        }
+
+        /* A single editorial rail, not a grid. */
+        .rail {
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: calc(var(--gutter) / 2);
+            width: 1px;
+            background: linear-gradient(
+                to bottom,
+                transparent 0,
+                var(--line) 8%,
+                var(--line) 92%,
+                transparent 100%
+            );
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* Topbar */
+        .topbar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 5;
+            padding-top: 1.5rem;
+        }
+        .topbar-inner {
+            display: flex;
+            align-items: baseline;
+            gap: 2rem;
+        }
+        .brand {
+            font-size: 0.92rem;
+            font-weight: 500;
+            letter-spacing: -0.02em;
+            text-decoration: none;
+        }
+        .topnav {
+            display: flex;
+            gap: clamp(1rem, 3vw, 2.5rem);
+            margin-left: auto;
+        }
+        .topnav a {
+            margin: 0;
+            font-family: var(--mono);
+            font-size: 0.64rem;
+            font-weight: 400;
+            letter-spacing: 0.09em;
+            text-transform: uppercase;
+            color: var(--muted);
+            text-decoration: none;
+            transition: color 0.35s var(--ease-ui);
+        }
+        .topnav a:hover {
+            color: var(--ink);
+        }
+
+        /* Hero */
+        .hero {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            min-height: 88vh;
+            min-height: 88svh;
+            padding-top: clamp(8rem, 18vh, 14rem);
+            padding-bottom: 2rem;
+        }
+        .eyebrow {
+            margin: 0 0 clamp(1.2rem, 2.5vh, 2rem);
+            font-family: var(--mono);
+            font-size: 0.66rem;
+            letter-spacing: 0.09em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+        .title-mask {
+            overflow: hidden;
+            /* Carries the title's type scale so the padding clears the descenders. */
+            font-size: clamp(3rem, 17vw, 16rem);
+            padding-bottom: 0.26em;
+            margin-bottom: -0.26em;
+        }
+        h1 {
+            margin: 0;
+            font-family: var(--display);
+            font-size: 1em;
+            font-weight: 400;
+            line-height: 0.82;
+            letter-spacing: -0.065em;
+            white-space: nowrap;
+        }
+        .hero-foot {
+            display: grid;
+            grid-template-columns: minmax(0, 1.5fr) minmax(12rem, 0.6fr);
+            gap: clamp(2rem, 6vw, 6rem);
+            margin-top: clamp(2.5rem, 6vh, 5rem);
+            padding-top: 1.4rem;
+            border-top: 1px solid var(--line);
+        }
+        .lede {
+            max-width: 47ch;
+            margin: 0;
+            font-size: clamp(0.95rem, 1.2vw, 1.06rem);
+            line-height: 1.65;
+            color: #B8B5AE;
+        }
+        .hero-meta {
+            justify-self: end;
+            min-width: 12rem;
+        }
+        .meta-label {
+            display: block;
+            margin-bottom: 0.7rem;
+            font-family: var(--mono);
+            font-size: 0.62rem;
+            letter-spacing: 0.09em;
+            text-transform: uppercase;
+            color: var(--faint);
+        }
+        .hero-meta p {
+            margin: 0;
+            font-family: var(--mono);
+            font-size: 0.66rem;
+            line-height: 2;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+        .scroll-cue {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.7rem;
+            align-self: flex-start;
+            margin-top: auto;
+            padding-top: 4rem;
+            font-family: var(--mono);
+            font-size: 0.64rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--muted);
+            text-decoration: none;
+            transition: color 0.35s var(--ease-ui);
+        }
+        .scroll-cue span:first-child {
+            color: var(--faint);
+        }
+        .scroll-arrow {
+            display: inline-block;
+            transition: transform 0.45s var(--ease-out);
+        }
+        .scroll-cue:hover {
+            color: var(--ink);
+        }
+        .scroll-cue:hover .scroll-arrow {
+            transform: translateY(4px);
+        }
+
+        /* Chapters */
+        .workspace,
+        .closing {
+            position: relative;
+            z-index: 2;
+            padding-top: clamp(2rem, 4vw, 3.25rem);
+            border-top: 1px solid var(--line);
+        }
+        .workspace {
+            padding-bottom: clamp(5rem, 12vw, 10rem);
+        }
+        .closing {
+            display: grid;
+            grid-template-columns: minmax(0, 1.8fr) minmax(19rem, 0.9fr);
+            gap: clamp(2rem, 5vw, 4.5rem);
+            align-items: start;
+            padding-bottom: clamp(5rem, 12vw, 10rem);
+        }
+        .result,
+        .method {
+            position: relative;
+            z-index: 2;
+        }
+        .section-head {
+            display: grid;
+            grid-template-columns: 2.5rem minmax(0, 1fr) auto;
+            gap: clamp(0.75rem, 2vw, 1.5rem);
+            align-items: baseline;
+            margin-bottom: clamp(2.5rem, 6vw, 5rem);
+        }
+        .section-index,
+        .section-meta {
+            font-family: var(--mono);
+            font-size: 0.64rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+        .section-meta {
+            text-align: right;
+        }
+        h2 {
+            margin: 0;
+            font-size: clamp(1.5rem, 3vw, 2.5rem);
+            font-weight: 400;
+            line-height: 1;
+            letter-spacing: -0.045em;
+        }
+
+        /* Analyzer */
+        .field-grid {
+            display: grid;
+            grid-template-columns: minmax(12rem, 0.85fr) minmax(0, 2.15fr);
+            gap: clamp(2rem, 6vw, 7rem);
+        }
+        .field-aside {
+            align-self: start;
+        }
+        .field-title {
+            margin: 0 0 1.3rem;
+            font-size: clamp(1.5rem, 2.6vw, 2.35rem);
+            line-height: 1.03;
+            letter-spacing: -0.045em;
+        }
+        .field-note {
+            max-width: 27ch;
+            margin: 0;
+            font-size: 0.85rem;
+            line-height: 1.65;
+            color: var(--muted);
+        }
+        .field-head {
+            display: flex;
+            justify-content: space-between;
+            gap: 1.5rem;
+            margin-bottom: 0.9rem;
+            font-family: var(--mono);
+            font-size: 0.64rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+        #char-count {
+            color: var(--faint);
+            white-space: nowrap;
+        }
+        textarea {
+            display: block;
+            width: 100%;
+            min-height: clamp(17rem, 31vw, 23rem);
+            margin: 0;
+            padding: clamp(0.85rem, 1.3vw, 1.05rem) clamp(0.9rem, 1.4vw, 1.15rem);
+            border: 1px solid var(--ink);
+            border-radius: 0;
+            background: transparent;
+            color: var(--ink);
+            font-family: var(--mono);
+            font-size: 0.8rem;
+            line-height: 1.75;
+            caret-color: var(--ink);
+            resize: vertical;
+            transition: border-color 0.4s var(--ease-ui), background-color 0.4s var(--ease-ui);
+        }
+        textarea::placeholder {
+            color: var(--faint);
+            opacity: 1;
+        }
+        textarea:focus {
+            outline: none;
+            border-color: var(--ink);
+            background: rgba(242, 240, 235, 0.03);
+        }
+
+        .examples {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.6rem 0.55rem;
+            margin-top: 1.4rem;
+        }
+        .examples-label {
+            margin-right: 0.3rem;
+            font-family: var(--mono);
+            font-size: 0.62rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--faint);
+        }
+        .example {
+            padding: 0.42rem 0.72rem 0.36rem;
+            border: 1px solid var(--ink);
+            background: none;
+            font-family: var(--mono);
+            font-size: 0.68rem;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: var(--ink);
+            cursor: pointer;
+            transition:
+                color 0.35s var(--ease-ui),
+                background-color 0.35s var(--ease-ui),
+                border-color 0.35s var(--ease-ui);
+        }
+        .example span {
+            margin-right: 0.5em;
+            color: var(--muted);
+        }
+        .example:hover {
+            background: var(--ink);
+            color: var(--bg);
+            border-color: var(--ink);
+        }
+        .example:hover span {
+            color: var(--bg);
+        }
+
+        .analyze {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 2rem;
+            width: 100%;
+            margin-top: clamp(1.25rem, 2.5vw, 2rem);
+            padding: clamp(1.1rem, 2.2vw, 1.7rem) 0;
+            border: 0;
+            border-top: 1px solid var(--line);
+            border-bottom: 1px solid var(--line);
+            background: none;
+            color: var(--ink);
+            font-family: var(--display);
+            font-size: clamp(1.55rem, 3vw, 2.75rem);
+            font-weight: 400;
+            letter-spacing: -0.045em;
+            text-align: left;
+            cursor: pointer;
+            transition:
+                background-color 0.45s var(--ease-ui),
+                color 0.45s var(--ease-ui),
+                padding 0.45s var(--ease-out);
+        }
+        .btn-arrow {
+            flex: none;
+            width: clamp(1.4rem, 2.2vw, 2rem);
+            height: clamp(1.4rem, 2.2vw, 2rem);
+            transition: transform 0.5s var(--ease-out);
+        }
+        .analyze:hover {
+            padding-inline: clamp(0.75rem, 1.5vw, 1.5rem);
+            background: var(--ink);
+            color: var(--bg);
+        }
+        .analyze:hover .btn-arrow {
+            transform: translateX(6px);
+        }
+        .analyze:disabled {
+            padding-inline: 0;
+            background: none;
+            color: var(--muted);
+            cursor: progress;
+        }
+        .analyze:disabled .btn-arrow {
+            transform: none;
+        }
+        .status {
+            min-height: 1.5em;
+            margin: 1rem 0 0;
+            font-family: var(--mono);
+            font-size: 0.66rem;
+            letter-spacing: 0.03em;
+            color: var(--muted);
+        }
+        .status.is-error {
+            color: var(--high);
+        }
+
+        /* Result */
+        #readout[data-state="low"] { --state: var(--low); }
+        #readout[data-state="medium"] { --state: var(--mid); }
+        #readout[data-state="high"] { --state: var(--high); }
+
+        .score-area {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: clamp(2rem, 5vw, 5rem);
+            flex-wrap: wrap;
+        }
+        .score-main {
+            display: flex;
+            align-items: flex-end;
+            gap: clamp(0.7rem, 1.5vw, 1.4rem);
+        }
+        #score {
+            display: block;
+            font-size: clamp(6.5rem, 25vw, 23rem);
+            font-weight: 400;
+            line-height: 0.74;
+            letter-spacing: -0.08em;
+            font-variant-numeric: tabular-nums;
+            font-feature-settings: "tnum" 1;
+            color: var(--ink);
+        }
+        #readout[data-state="idle"] #score {
+            color: var(--muted);
+            font-size: clamp(4rem, 13vw, 9rem);
+        }
+        .score-of {
+            padding-bottom: clamp(0.8rem, 2vw, 2rem);
+            font-family: var(--mono);
+            font-size: 0.7rem;
+            letter-spacing: 0.05em;
+            color: var(--muted);
+        }
+        .score-side {
+            max-width: 31ch;
+            padding-bottom: 0.35rem;
+        }
+        .state {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+            font-family: var(--mono);
+            font-size: 0.66rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--ink);
+        }
+        .state-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--state);
+            transition: background-color 0.4s var(--ease-ui);
+        }
+        #score-caption {
+            margin: 0.85rem 0 0;
+            font-size: 0.88rem;
+            line-height: 1.6;
+            color: var(--muted);
+        }
+        .score-bar {
+            position: relative;
+            height: 3px;
+            margin-top: clamp(2.25rem, 5vw, 3.5rem);
+            background: #2b2b2b;
+        }
+        /* Halfway tick, so the scale is easy to read against the score. */
+        .score-bar::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 50%;
+            width: 1px;
+            background: rgba(242, 240, 235, 0.28);
+            pointer-events: none;
+        }
+        #score-fill {
+            position: relative;
+            z-index: 1;
+            display: block;
+            width: 0%;
+            height: 100%;
+            background: var(--state);
+            transition: background-color 0.4s var(--ease-ui);
+        }
+        #score-fill::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            right: 0;
+            width: 2px;
+            height: 13px;
+            background: var(--ink);
+            transform: translate(50%, -50%);
+            transition: opacity 0.3s var(--ease-ui);
+        }
+        #readout[data-state="idle"] #score-fill::after {
+            opacity: 0;
+        }
+
+        .result-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.55fr) minmax(15rem, 0.75fr);
+            gap: clamp(2rem, 6vw, 7rem);
+            margin-top: clamp(3rem, 8vw, 6rem);
+        }
+        .block-head {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 1.5rem;
+            padding-top: 0.9rem;
+            border-top: 1px solid var(--line);
+            margin-bottom: 0.4rem;
+        }
+        .block-head h3 {
+            margin: 0;
+            font-family: var(--mono);
+            font-size: 0.64rem;
+            font-weight: 400;
+            letter-spacing: 0.09em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+        .block-head span {
+            font-family: var(--mono);
+            font-size: 0.66rem;
+            color: var(--faint);
+        }
+        #reasons {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+        #reasons li {
+            display: grid;
+            grid-template-columns: 2.2rem minmax(0, 1fr);
+            gap: 1rem;
+            padding: 1.15rem 0;
+            border-bottom: 1px solid var(--line);
+            font-size: clamp(0.98rem, 1.25vw, 1.14rem);
+            line-height: 1.5;
+        }
+        #reasons li .num {
+            padding-top: 0.24rem;
+            font-family: var(--mono);
+            font-size: 0.62rem;
+            color: var(--faint);
+        }
+        #reasons li.empty {
+            display: block;
+            padding: 1.15rem 0;
+            color: var(--muted);
+            font-size: 0.92rem;
+        }
+        .sender dl {
+            margin: 0;
+        }
+        .sender-row {
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--line);
+        }
+        .sender dt {
+            margin-bottom: 0.35rem;
+            font-family: var(--mono);
+            font-size: 0.6rem;
+            letter-spacing: 0.09em;
+            text-transform: uppercase;
+            color: var(--faint);
+        }
+        .sender dd {
+            margin: 0;
+            font-size: 0.9rem;
+            line-height: 1.55;
+            overflow-wrap: anywhere;
+        }
+        .sender dd.is-muted {
+            color: var(--muted);
+        }
+        .links-block {
+            margin-top: clamp(2.5rem, 6vw, 5rem);
+        }
+        #links {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+        #links li {
+            padding: 1.1rem 0;
+            border-bottom: 1px solid var(--line);
+        }
+        #links a {
+            font-size: clamp(1rem, 1.45vw, 1.25rem);
+            line-height: 1.4;
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            overflow-wrap: anywhere;
+            transition: border-color 0.35s var(--ease-ui), color 0.35s var(--ease-ui);
+        }
+        #links a:hover {
+            border-bottom-color: var(--ink);
+        }
+        #links a.is-url {
+            font-family: var(--mono);
+            font-size: 0.8rem;
+            line-height: 1.7;
+        }
+        .link-url {
+            display: block;
+            margin-top: 0.4rem;
+            font-family: var(--mono);
+            font-size: 0.7rem;
+            line-height: 1.6;
+            color: var(--muted);
+            overflow-wrap: anywhere;
+        }
+        #links li.empty {
+            color: var(--muted);
+            font-size: 0.92rem;
+        }
+
+        /* Method */
+        .method-intro {
+            max-width: 56ch;
+            margin: 0 0 clamp(2.5rem, 5vw, 4rem);
+            font-size: clamp(1rem, 1.35vw, 1.12rem);
+            line-height: 1.65;
+            color: var(--muted);
+        }
+        .bands {
+            border-top: 1px solid var(--line);
+        }
+        .band {
+            display: grid;
+            grid-template-columns: minmax(10rem, 1fr) minmax(6rem, 0.55fr) minmax(0, 1.9fr);
+            gap: clamp(1rem, 3vw, 3rem);
+            align-items: baseline;
+            padding: clamp(1.2rem, 2.4vw, 1.9rem) 0;
+            border-bottom: 1px solid var(--line);
+        }
+        .band[data-state="low"] { --band: var(--low); }
+        .band[data-state="medium"] { --band: var(--mid); }
+        .band[data-state="high"] { --band: var(--high); }
+        .band-name {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: clamp(1.35rem, 2.3vw, 2.1rem);
+            line-height: 1;
+            letter-spacing: -0.04em;
+        }
+        .band-name::before {
+            content: "";
+            flex: none;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--band);
+        }
+        .band-range {
+            font-family: var(--mono);
+            font-size: 0.66rem;
+            letter-spacing: 0.05em;
+            color: var(--muted);
+        }
+        .band p {
+            max-width: 52ch;
+            margin: 0;
+            font-size: 0.88rem;
+            line-height: 1.65;
+            color: var(--muted);
+        }
+
+        /* Footer */
+        .footer {
+            position: relative;
+            z-index: 2;
+            padding: 1.75rem 0 2.5rem;
+            border-top: 1px solid var(--line);
+        }
+        .footer-inner {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem 2rem;
+            flex-wrap: wrap;
+        }
+        .footer p {
+            margin: 0;
+            font-family: var(--mono);
+            font-size: 0.62rem;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+
+        /* Cursor */
+        html.custom-cursor,
+        html.custom-cursor body,
+        html.custom-cursor a,
+        html.custom-cursor button {
+            cursor: none;
+        }
+        html.custom-cursor textarea,
+        html.custom-cursor input {
+            cursor: text;
+        }
+        .cursor {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 9999;
+            width: 14px;
+            height: 14px;
+            border: 1px solid rgba(242, 240, 235, 0.55);
+            border-radius: 50%;
+            pointer-events: none;
+            opacity: 0;
+            transform: translate3d(-100px, -100px, 0) translate(-50%, -50%);
+            mix-blend-mode: difference;
+            transition:
+                width 0.35s var(--ease-ui),
+                height 0.35s var(--ease-ui),
+                background-color 0.35s var(--ease-ui),
+                border-color 0.35s var(--ease-ui),
+                opacity 0.25s var(--ease-ui);
+            will-change: transform;
+        }
+        .cursor.is-visible {
+            opacity: 1;
+        }
+        .cursor.is-active {
+            width: 34px;
+            height: 34px;
+            border-color: transparent;
+            background: rgba(242, 240, 235, 0.08);
+        }
+
+        /* Motion */
+        @keyframes fade-down {
+            from { opacity: 0; transform: translateY(-8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fade-up {
+            from { opacity: 0; transform: translateY(16px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes title-rise {
+            from { transform: translateY(135%); }
+            to { transform: translateY(0); }
+        }
+        @keyframes score-in {
+            from { opacity: 0; transform: translateY(22px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes row-in {
+            from { opacity: 0; transform: translateY(9px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (prefers-reduced-motion: no-preference) {
+            .topbar { animation: fade-down 0.9s var(--ease-out) both; }
+            .eyebrow { animation: fade-up 0.8s var(--ease-out) 0.12s both; }
+            .title-mask h1 { animation: title-rise 1.15s var(--ease-out) 0.2s both; }
+            .hero-foot { animation: fade-up 0.9s var(--ease-out) 0.38s both; }
+            .scroll-cue { animation: fade-up 0.9s var(--ease-out) 0.52s both; }
+            .workspace { animation: fade-up 0.8s var(--ease-out) 0.28s both; }
+
+            .result.has-result .score-main {
+                animation: score-in 0.9s var(--ease-out) both;
+            }
+            .result.has-result #reasons li:not(.empty),
+            .result.has-result #links li:not(.empty) {
+                animation: row-in 0.6s var(--ease-out) both;
+            }
+            .result.has-result .sender-row {
+                animation: row-in 0.6s var(--ease-out) both;
+            }
+            .result.has-result .sender-row:nth-child(2) { animation-delay: 0.08s; }
+            .result.has-result .sender-row:nth-child(3) { animation-delay: 0.16s; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            html { scroll-behavior: auto; }
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                animation-delay: 0ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
+        /* Responsive */
+        @media (min-width: 1100px) {
+            .closing .method .section-head {
+                grid-template-columns: 2rem minmax(0, 1fr);
+                row-gap: 0.4rem;
+            }
+            .closing .method .section-meta {
+                grid-column: 2;
+                text-align: left;
+            }
+            .closing .band {
+                grid-template-columns: 1fr auto;
+                row-gap: 0.8rem;
+            }
+            .closing .band p {
+                grid-column: 1 / -1;
+                max-width: none;
+            }
+        }
+
+        @media (max-width: 1099px) {
+            .closing {
+                grid-template-columns: 1fr;
+                gap: 0;
+            }
+            .closing .result {
+                padding-bottom: clamp(5rem, 12vw, 10rem);
+            }
+            .closing .method {
+                padding-top: clamp(2rem, 4vw, 3.25rem);
+                border-top: 1px solid var(--line);
+            }
+        }
+
+        @media (max-width: 900px) {
+            .field-grid {
+                grid-template-columns: 1fr;
+                gap: 2.25rem;
+            }
+            .field-note {
+                max-width: 44ch;
+            }
+            .result-grid {
+                grid-template-columns: 1fr;
+                gap: 3rem;
+            }
+            .score-side {
+                padding-bottom: 0;
+            }
+        }
+
+        @media (max-width: 720px) {
+            .hero {
+                min-height: 82vh;
+                min-height: 82svh;
+                padding-top: clamp(7rem, 15vh, 9rem);
+            }
+            .hero-foot {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+            .hero-meta {
+                justify-self: start;
+            }
+            .section-head {
+                grid-template-columns: 2rem minmax(0, 1fr);
+                row-gap: 0.4rem;
+            }
+            .section-meta {
+                grid-column: 2;
+                text-align: left;
+            }
+            .band {
+                grid-template-columns: 1fr auto;
+                row-gap: 0.8rem;
+            }
+            .band p {
+                grid-column: 1 / -1;
+                max-width: none;
+            }
+            .band-name {
+                font-size: 1.5rem;
+            }
+            .score-side {
+                max-width: 100%;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .topnav {
+                gap: 1rem;
+            }
+            .topnav a {
+                font-size: 0.6rem;
+            }
+            .topbar {
+                padding-top: 1.2rem;
+            }
+            .hero {
+                padding-top: 6.5rem;
+            }
+            .eyebrow {
+                font-size: 0.6rem;
+            }
+            textarea {
+                min-height: 19rem;
+                font-size: 0.76rem;
+            }
+            .examples {
+                gap: 0.7rem 1.1rem;
+            }
+            .example {
+                font-size: 0.64rem;
+            }
+            .analyze {
+                gap: 1rem;
+            }
+            #score {
+                font-size: clamp(6.5rem, 32vw, 10rem);
+            }
+            .footer p {
+                font-size: 0.58rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="rail" aria-hidden="true"></div>
+
+    <header class="topbar">
+        <div class="shell topbar-inner">
+            <a class="brand" href="/">SpoofQuill</a>
+            <nav class="topnav" aria-label="Sections">
+                <a href="#analyzer">Analyzer</a>
+                <a href="#method">Method</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero shell" aria-labelledby="page-title">
+            <p class="eyebrow">Email threat analysis</p>
+            <div class="title-mask">
+                <h1 id="page-title">SpoofQuill</h1>
+            </div>
+
+            <div class="hero-foot">
+                <p class="lede">
+                    Paste a suspicious email and SpoofQuill reads the headers and the links. It returns a score
+                    from 0 to 100 and lists the signs that pushed the score up.
+                </p>
+                <div class="hero-meta">
+                    <span class="meta-label">Signals</span>
+                    <p>
+                        Reply-to mismatch<br>
+                        Misleading link target<br>
+                        Urgency language<br>
+                        Pressure to pay or sign in
+                    </p>
+                </div>
+            </div>
+
+            <a class="scroll-cue" href="#analyzer">
+                <span>01</span> Begin analysis <span class="scroll-arrow" aria-hidden="true">↓</span>
+            </a>
+        </section>
+
+        <section class="workspace shell" id="analyzer" aria-labelledby="analyzer-title">
+            <div class="section-head">
+                <span class="section-index">01</span>
+                <h2 id="analyzer-title">Analyzer</h2>
+                <span class="section-meta">Raw email, one at a time</span>
+            </div>
+
+            <div class="field-grid">
+                <aside class="field-aside">
+                    <p class="field-title">Paste the<br>email.</p>
+                    <p class="field-note">
+                        Include the headers, the body, and the links. The score comes from the text you paste.
+                    </p>
+                </aside>
+
+                <div class="field">
+                    <div class="field-head">
+                        <label for="email-input">Raw message</label>
+                        <span id="char-count">0 characters</span>
+                    </div>
+                    <textarea id="email-input" rows="10" spellcheck="false" placeholder="Paste the raw email here. Include headers, body, and links."></textarea>
+
+                    <div class="examples" role="group" aria-label="Load an example email">
+                        <span class="examples-label">Examples</span>
+                        <button type="button" class="example" data-example="1" aria-label="Load example 1"><span>01</span>Example</button>
+                        <button type="button" class="example" data-example="2" aria-label="Load example 2"><span>02</span>Example</button>
+                        <button type="button" class="example" data-example="3" aria-label="Load example 3"><span>03</span>Example</button>
+                    </div>
+                </div>
+            </div>
+
+            <button type="button" id="analyze" class="analyze">
+                <span class="btn-label">Analyze email</span>
+                <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M5 12h14"></path>
+                    <path d="m13 6 6 6-6 6"></path>
+                </svg>
+            </button>
+
+            <p class="status" id="status" role="status" aria-live="polite">Paste an email or load an example.</p>
+        </section>
+
+        <div class="closing shell">
+            <section class="result" id="readout" data-state="idle" aria-labelledby="result-title">
+                <div class="section-head">
+                    <span class="section-index">02</span>
+                    <h2 id="result-title">Result</h2>
+                    <span class="section-meta">Score out of 100</span>
+                </div>
+
+                <div class="score-area">
+                    <div class="score-main">
+                        <span id="score" aria-label="Phishing risk score">·</span>
+                        <span class="score-of">/100</span>
+                    </div>
+                    <div class="score-side">
+                        <span class="state" id="badge" data-state="idle">
+                            <span class="state-dot" aria-hidden="true"></span>
+                            <span id="state-label">Awaiting sample</span>
+                        </span>
+                        <p id="score-caption">Paste a message to read its score.</p>
+                    </div>
+                </div>
+
+                <div class="score-bar" aria-hidden="true">
+                    <span id="score-fill"></span>
+                </div>
+
+                <div class="result-grid">
+                    <section aria-labelledby="reasons-title">
+                        <div class="block-head">
+                            <h3 id="reasons-title">Reasons</h3>
+                            <span id="reason-count">0</span>
+                        </div>
+                        <ol id="reasons">
+                            <li class="empty">No analysis yet. Load an example to start.</li>
+                        </ol>
+                    </section>
+
+                    <section class="sender" aria-labelledby="sender-title">
+                        <div class="block-head">
+                            <h3 id="sender-title">Sender</h3>
+                        </div>
+                        <dl>
+                            <div class="sender-row">
+                                <dt>From</dt>
+                                <dd id="sender" class="is-muted">None</dd>
+                            </div>
+                            <div class="sender-row">
+                                <dt>Domain</dt>
+                                <dd id="sender-domain" class="is-muted">None</dd>
+                            </div>
+                            <div class="sender-row">
+                                <dt>Reply-to</dt>
+                                <dd id="reply-to" class="is-muted">None</dd>
+                            </div>
+                        </dl>
+                    </section>
+                </div>
+
+                <section class="links-block" aria-labelledby="links-title">
+                    <div class="block-head">
+                        <h3 id="links-title">Links</h3>
+                        <span id="link-count">0</span>
+                    </div>
+                    <ul id="links">
+                        <li class="empty">No links yet.</li>
+                    </ul>
+                </section>
+            </section>
+
+            <section class="method" id="method" aria-labelledby="method-title">
+                <div class="section-head">
+                    <span class="section-index">03</span>
+                    <h2 id="method-title">Method</h2>
+                    <span class="section-meta">How to read the number</span>
+                </div>
+
+                <p class="method-intro">
+                    Four signals add points: a reply-to that does not match the sender, link text that hides where it
+                    goes, urgent language, and a link that asks for payment or a login. When several of these appear in
+                    one message, a stacking bonus adds more points. Unrelated signs together are stronger evidence than
+                    any one alone.
+                </p>
+
+                <div class="bands">
+                    <div class="band" data-state="low">
+                        <span class="band-name">Low</span>
+                        <span class="band-range">00 to 29</span>
+                        <p>The message shows little or no evidence of phishing. Check unusual requests through a channel you already trust.</p>
+                    </div>
+                    <div class="band" data-state="medium">
+                        <span class="band-name">Suspicious</span>
+                        <span class="band-range">30 to 59</span>
+                        <p>The message has one or more real warning signs. Confirm the sender before you reply, pay, or sign in.</p>
+                    </div>
+                    <div class="band" data-state="high">
+                        <span class="band-name">High</span>
+                        <span class="band-range">60 to 100</span>
+                        <p>Several signals point the same way. Treat the message as hostile and do not use its links.</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="shell footer-inner">
+            <p>SpoofQuill, email threat analysis</p>
+            <p>Scores help you decide what to check next</p>
+        </div>
+    </footer>
+
+    <script>
+        const EXAMPLES = {
+            1: "/examples/example1.txt",
+            2: "/examples/example2.txt",
+            3: "/examples/example3.txt",
+        };
+
+        const input = document.getElementById("email-input");
+        const analyzeButton = document.getElementById("analyze");
+        const analyzeLabel = analyzeButton.querySelector(".btn-label");
+        const status = document.getElementById("status");
+        const readout = document.getElementById("readout");
+        const badge = document.getElementById("badge");
+        const stateLabel = document.getElementById("state-label");
+        const score = document.getElementById("score");
+        const scoreCaption = document.getElementById("score-caption");
+        const scoreFill = document.getElementById("score-fill");
+        const reasonCount = document.getElementById("reason-count");
+        const linkCount = document.getElementById("link-count");
+        const charCount = document.getElementById("char-count");
+
+        const RISK = {
+            low: {
+                label: "Low risk",
+                caption: "The message shows little or no evidence of phishing.",
+            },
+            medium: {
+                label: "Suspicious",
+                caption: "Warning signs are present. Check the sender before you reply, pay, or sign in.",
+            },
+            high: {
+                label: "High risk",
+                caption: "Several warning signs fire together. Do not use the links in this message.",
+            },
+        };
+
+        function setStatus(message, isError = false) {
+            status.textContent = message;
+            status.classList.toggle("is-error", isError);
+        }
+
+        function setBusy(busy) {
+            analyzeButton.disabled = busy;
+            analyzeButton.setAttribute("aria-busy", String(busy));
+            analyzeLabel.textContent = busy ? "Reading..." : "Analyze email";
+        }
+
+        function show(value) {
+            if (value === null || value === undefined || value === "") return "None";
+            return String(value);
+        }
+
+        function riskFor(value) {
+            if (value >= 60) return "high";
+            if (value >= 30) return "medium";
+            return "low";
+        }
+
+        function setState(state, label, caption) {
+            readout.dataset.state = state;
+            badge.dataset.state = state;
+            stateLabel.textContent = label;
+            scoreCaption.textContent = caption;
+        }
+
+        function setOrigin(id, value) {
+            const node = document.getElementById(id);
+            node.textContent = show(value);
+            node.classList.toggle("is-muted", node.textContent === "None");
+        }
+
+        function restartResultAnimation() {
+            readout.classList.remove("has-result");
+            void readout.offsetWidth;
+            readout.classList.add("has-result");
+        }
+
+        function resetReadout() {
+            readout.classList.remove("has-result");
+            setState("idle", "Awaiting sample", "Paste a message to read its score.");
+            score.textContent = "·";
+            score.setAttribute("aria-label", "Phishing risk score");
+            scoreFill.style.width = "0%";
+            reasonCount.textContent = "0";
+            linkCount.textContent = "0";
+
+            const reasons = document.getElementById("reasons");
+            reasons.replaceChildren();
+            const reasonItem = document.createElement("li");
+            reasonItem.className = "empty";
+            reasonItem.textContent = "No analysis yet. Load an example to start.";
+            reasons.append(reasonItem);
+
+            setOrigin("sender", null);
+            setOrigin("sender-domain", null);
+            setOrigin("reply-to", null);
+
+            const links = document.getElementById("links");
+            links.replaceChildren();
+            const linkItem = document.createElement("li");
+            linkItem.className = "empty";
+            linkItem.textContent = "No links yet.";
+            links.append(linkItem);
+        }
+
+        function render(data) {
+            const state = riskFor(data.score);
+            const risk = RISK[state];
+
+            setState(state, risk.label, risk.caption);
+            score.textContent = String(data.score);
+            score.setAttribute("aria-label", `Phishing risk score ${data.score} out of 100`);
+            scoreFill.style.width = `${Math.max(0, Math.min(100, data.score))}%`;
+
+            const reasons = document.getElementById("reasons");
+            reasons.replaceChildren();
+            reasonCount.textContent = String(data.reasons.length);
+            if (!data.reasons.length) {
+                const item = document.createElement("li");
+                item.className = "empty";
+                item.textContent = "No warning signs found.";
+                reasons.append(item);
+            }
+            data.reasons.forEach((reason, index) => {
+                const item = document.createElement("li");
+                item.style.animationDelay = `${Math.min(index * 55, 330)}ms`;
+
+                const number = document.createElement("span");
+                number.className = "num";
+                number.textContent = String(index + 1).padStart(2, "0");
+
+                const text = document.createElement("span");
+                text.textContent = reason;
+
+                item.append(number, text);
+                reasons.append(item);
+            });
+
+            setOrigin("sender", data.sender);
+            setOrigin("sender-domain", data.sender_domain);
+            setOrigin("reply-to", data.reply_to);
+
+            const links = document.getElementById("links");
+            links.replaceChildren();
+            linkCount.textContent = String(data.links.length);
+            if (!data.links.length) {
+                const item = document.createElement("li");
+                item.className = "empty";
+                item.textContent = "No links yet.";
+                links.append(item);
+            }
+            data.links.forEach((link, index) => {
+                const item = document.createElement("li");
+                item.style.animationDelay = `${Math.min(index * 55, 220)}ms`;
+
+                const hasText = Boolean(link.text) && link.text !== link.url;
+                const anchor = document.createElement("a");
+                anchor.href = link.url;
+                anchor.textContent = hasText ? link.text : link.url;
+                anchor.target = "_blank";
+                anchor.rel = "noopener noreferrer";
+                if (!hasText) anchor.classList.add("is-url");
+                item.append(anchor);
+
+                if (hasText) {
+                    const url = document.createElement("span");
+                    url.className = "link-url";
+                    url.textContent = link.url;
+                    item.append(url);
+                }
+                links.append(item);
+            });
+
+            restartResultAnimation();
+        }
+
+        async function loadExample(number) {
+            setStatus(`Loading example ${number}...`);
+            try {
+                const response = await fetch(EXAMPLES[number]);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                input.value = await response.text();
+                input.scrollTop = 0;
+                charCount.textContent = `${input.value.length.toLocaleString()} characters`;
+                resetReadout();
+                setStatus(`Example ${number} loaded. Ready to analyze.`);
+            } catch (error) {
+                setStatus(
+                    `Could not load example ${number} (${error.message}). ` +
+                        "Check that the SpoofQuill server is running.",
+                    true
+                );
+            }
+        }
+
+        function scrollToReadout() {
+            const readout = document.getElementById("readout");
+            if (!readout) return;
+            const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+            const top = Math.max(readout.getBoundingClientRect().top + window.scrollY - 24, 0);
+            window.scrollTo({ top, behavior: reducedMotion ? "auto" : "smooth" });
+        }
+
+        async function analyze() {
+            const rawEmail = input.value;
+            if (!rawEmail.trim()) {
+                setStatus("Paste an email first, or load one of the examples.", true);
+                return;
+            }
+
+            setBusy(true);
+            setStatus("Reading...");
+            try {
+                const response = await fetch("/analyze", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ raw_email: rawEmail }),
+                });
+
+                if (!response.ok) {
+                    let detail = `HTTP ${response.status}`;
+                    try {
+                        const body = await response.json();
+                        if (body.detail) detail = JSON.stringify(body.detail);
+                    } catch {
+                        /* response was not JSON */
+                    }
+                    throw new Error(detail);
+                }
+
+                const data = await response.json();
+                render(data);
+                setStatus("");
+                scrollToReadout();
+            } catch (error) {
+                setStatus(
+                    `Analysis failed (${error.message}). ` +
+                        "Check that the SpoofQuill server is running.",
+                    true
+                );
+            } finally {
+                setBusy(false);
+            }
+        }
+
+        input.addEventListener("input", () => {
+            charCount.textContent = `${input.value.length.toLocaleString()} characters`;
+        });
+
+        for (const button of document.querySelectorAll("[data-example]")) {
+            button.addEventListener("click", () => loadExample(button.dataset.example));
+        }
+        analyzeButton.addEventListener("click", analyze);
+
+        (() => {
+            const finePointer = window.matchMedia("(pointer: fine)").matches;
+            const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+            if (!window.PointerEvent || !finePointer || reducedMotion) return;
+
+            const cursor = document.createElement("div");
+            cursor.className = "cursor";
+            cursor.setAttribute("aria-hidden", "true");
+            document.body.append(cursor);
+            document.documentElement.classList.add("custom-cursor");
+
+            let targetX = window.innerWidth / 2;
+            let targetY = window.innerHeight / 2;
+            let x = targetX;
+            let y = targetY;
+            let frame = 0;
+            let visible = false;
+
+            const tick = () => {
+                x += (targetX - x) * 0.24;
+                y += (targetY - y) * 0.24;
+                cursor.style.transform =
+                    `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%)`;
+
+                if (Math.abs(targetX - x) > 0.1 || Math.abs(targetY - y) > 0.1) {
+                    frame = requestAnimationFrame(tick);
+                } else {
+                    frame = 0;
+                }
+            };
+
+            window.addEventListener(
+                "pointermove",
+                (event) => {
+                    targetX = event.clientX;
+                    targetY = event.clientY;
+                    if (!visible) {
+                        visible = true;
+                        cursor.classList.add("is-visible");
+                    }
+                    if (!frame) frame = requestAnimationFrame(tick);
+                },
+                { passive: true }
+            );
+
+            const interactive = "a, button, textarea, input, [role='button']";
+            document.addEventListener("pointerover", (event) => {
+                if (event.target.closest(interactive)) cursor.classList.add("is-active");
+            });
+            document.addEventListener("pointerout", (event) => {
+                if (event.target.closest(interactive)) cursor.classList.remove("is-active");
+            });
+            document.addEventListener("pointerleave", () => {
+                visible = false;
+                cursor.classList.remove("is-visible");
+            });
+            document.addEventListener("pointerenter", () => {
+                visible = true;
+                cursor.classList.add("is-visible");
+            });
+        })();
+    </script>
+</body>
+</html>
