@@ -1,12 +1,39 @@
+# Python
 __pycache__/
 *.py[cod]
 .venv/
 .venv-worker/
 .venv-workers/
 venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+*.egg-info/
+
+# Node
 node_modules/
+npm-debug.log*
+yarn-error.log*
+
+# Build output
 .wrangler/
 python_modules/
-pylock.toml
-.dev.vars
 dist/
+pylock.toml
+
+# Environment and local secrets
+.env
+.env.*
+!.env.example
+.dev.vars*
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini

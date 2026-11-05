@@ -4,6 +4,8 @@
 
 SpoofQuill reads an email and scores how much it looks like phishing.
 
+**Live demo:** https://spoofquill.suryageethan1.workers.dev
+
 ## What it does
 
 Enter the sender, reply-to, subject, and message, or load one of the examples. SpoofQuill checks the fields, then returns a score from 0 to 100, the reasons behind that score, and the sender facts it could pull from the message.
@@ -78,6 +80,10 @@ Or the separate fields:
 ```
 
 `raw_email` wins when both forms are present. Structured input is validated on the server as well as in the browser, and an invalid field returns HTTP 422 before scoring.
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, style, and pull request rules. Report vulnerabilities privately as described in [SECURITY.md](SECURITY.md).
 
 ## License
 
