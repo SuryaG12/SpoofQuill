@@ -1,5 +1,7 @@
 # SpoofQuill
 
+[![CI](https://github.com/SuryaG12/SpoofQuill/actions/workflows/ci.yml/badge.svg)](https://github.com/SuryaG12/SpoofQuill/actions/workflows/ci.yml)
+
 SpoofQuill reads an email and scores how much it looks like phishing.
 
 ## What it does
@@ -32,9 +34,18 @@ uvicorn backend.app:app --reload
 
 Open http://127.0.0.1:8000/ in a browser.
 
+## Test
+
+```bash
+pip install -r requirements-dev.txt
+python -m pytest -q
+```
+
+The suite covers the example scores, structured parsing, validation, raw email compatibility, and the copies served from `public/`. CI runs the same tests on every push.
+
 ## Run on Cloudflare Workers
 
-This branch runs the same FastAPI app on Cloudflare Python Workers. The page and examples are served from Workers Static Assets, and `/analyze` and `/health` run through FastAPI.
+This project runs the same FastAPI app on Cloudflare Python Workers. The page and examples are served from Workers Static Assets, and `/analyze` and `/health` run through FastAPI.
 
 ```bash
 uv sync
@@ -67,3 +78,7 @@ Or the separate fields:
 ```
 
 `raw_email` wins when both forms are present. Structured input is validated on the server as well as in the browser, and an invalid field returns HTTP 422 before scoring.
+
+## License
+
+MIT. See [LICENSE](LICENSE).
