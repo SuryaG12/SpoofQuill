@@ -45,6 +45,8 @@ uv run pywrangler dev
 - State how you tested the change.
 - Keep the pull request small enough to review.
 
+The `main` branch is protected. A pull request must pass the `test` CI check before it can merge, and force pushes and branch deletion are blocked.
+
 ## Reporting bugs
 
 Open an issue with the steps to reproduce, the expected result, and the actual result. Include the Python version and the command you ran. Do not paste real private email content. Use the examples or a made-up message.
