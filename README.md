@@ -6,6 +6,8 @@ SpoofQuill reads an email and scores how much it looks like phishing.
 
 **Live demo:** https://spoofquill.suryageethan1.workers.dev
 
+![SpoofQuill page showing the email threat analysis hero](docs/screenshot.png)
+
 ## What it does
 
 Enter the sender, reply-to, subject, and message, or load one of the examples. SpoofQuill checks the fields, then returns a score from 0 to 100, the reasons behind that score, and the sender facts it could pull from the message.

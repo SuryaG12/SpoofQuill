@@ -156,3 +156,27 @@ async def example(filename: str, request: Request) -> Response:
         raise HTTPException(status_code=404)
     path = f"examples/{filename}"
     return await _static_file(path, path, request)
+
+
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon_ico(request: Request) -> Response:
+    """Serve the small icon browsers request by default."""
+    return await _static_file("favicon.ico", "public/favicon.ico", request)
+
+
+@app.get("/favicon.svg", include_in_schema=False)
+async def favicon_svg(request: Request) -> Response:
+    """Serve the scalable icon used by modern browsers."""
+    return await _static_file("favicon.svg", "public/favicon.svg", request)
+
+
+@app.get("/apple-touch-icon.png", include_in_schema=False)
+async def apple_touch_icon(request: Request) -> Response:
+    """Serve the home screen icon used by iOS."""
+    return await _static_file("apple-touch-icon.png", "public/apple-touch-icon.png", request)
+
+
+@app.get("/og.png", include_in_schema=False)
+async def og_image(request: Request) -> Response:
+    """Serve the link preview image used by social platforms."""
+    return await _static_file("og.png", "public/og.png", request)
