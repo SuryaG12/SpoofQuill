@@ -118,3 +118,32 @@ def test_page_has_link_preview_metadata() -> None:
         'name="twitter:card"',
     ):
         assert marker in html
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "/",
+        "/health",
+        "/favicon.ico",
+        "/favicon.svg",
+        "/apple-touch-icon.png",
+        "/og.png",
+        "/examples/example1.txt",
+    ],
+)
+def test_head_matches_get_without_a_body(path: str) -> None:
+    get_response = client.get(path)
+    head_response = client.head(path)
+
+    assert get_response.status_code == 200
+    assert head_response.status_code == get_response.status_code
+    assert head_response.content == b""
+    assert head_response.headers["content-type"] == get_response.headers["content-type"]
+    assert head_response.headers["content-length"] == get_response.headers["content-length"]
+
+
+def test_head_root_keeps_the_preview_tags_on_get() -> None:
+    html = client.get("/").text
+    for tag in ("og:title", "og:description", "og:image", "og:url"):
+        assert f'property="{tag}"' in html

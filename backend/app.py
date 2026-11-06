@@ -12,6 +12,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel, Field
+from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 try:  # works both as "backend.app" and as "python backend/app.py"
     from .parser import parse_email, parse_fields
@@ -33,6 +34,36 @@ app = FastAPI(
     version="0.1.0",
 )
 
+class HeadMethodMiddleware:
+    """Answer HEAD like GET, with the same status and headers but no body.
+
+    FastAPI only registers the methods named in each route decorator, so HEAD
+    used to fall through to a 405. Link crawlers such as LinkedInBot send HEAD
+    before they fetch the page.
+    """
+
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http" or scope["method"] != "HEAD":
+            await self.app(scope, receive, send)
+            return
+
+        body_sent = False
+
+        async def send_without_body(message: Message) -> None:
+            nonlocal body_sent
+            if message["type"] != "http.response.body":
+                await send(message)
+            elif not body_sent:
+                body_sent = True
+                await send({**message, "body": b"", "more_body": False})
+
+        # Resolve the request as GET, then suppress the response body.
+        await self.app({**scope, "method": "GET"}, receive, send_without_body)
+
+
 # The page may be opened from disk or another local port during development.
 app.add_middleware(
     CORSMiddleware,
@@ -40,6 +71,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(HeadMethodMiddleware)
 
 
 class AnalyzeRequest(BaseModel):
