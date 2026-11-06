@@ -90,3 +90,31 @@ def test_analyze_rejects_a_short_message() -> None:
 
 def test_analyze_rejects_an_empty_request() -> None:
     assert client.post("/analyze", json={}).status_code == 422
+
+
+@pytest.mark.parametrize(
+    "path, content_type",
+    [
+        ("/favicon.ico", "image/"),
+        ("/favicon.svg", "image/svg+xml"),
+        ("/apple-touch-icon.png", "image/png"),
+        ("/og.png", "image/png"),
+    ],
+)
+def test_brand_assets_are_served(path: str, content_type: str) -> None:
+    response = client.get(path)
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith(content_type)
+    assert response.content
+
+
+def test_page_has_link_preview_metadata() -> None:
+    html = normalized(ROOT / "frontend/index.html")
+    for marker in (
+        'rel="canonical"',
+        'rel="icon"',
+        'rel="apple-touch-icon"',
+        'property="og:image"',
+        'name="twitter:card"',
+    ):
+        assert marker in html
